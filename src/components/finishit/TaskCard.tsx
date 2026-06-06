@@ -1,13 +1,19 @@
-import { Bell, Clock, MoreHorizontal, Pause, Play, ArrowRightCircle, CheckCircle2, RotateCcw } from "lucide-react";
+import { Bell, Clock, MoreHorizontal, Pause, Play, ArrowRightCircle, CheckCircle2, RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "./StatusBadge";
 import { useStore, formatDuration, type Task } from "@/lib/finishit-store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useEffect, useRef } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function TaskCard({ task }: { task: Task }) {
-  const { startTask, pauseTask, finishTask, reopenTask, moveToTomorrow } = useStore();
+  const { startTask, pauseTask, finishTask, reopenTask, moveToTomorrow, removeTask } = useStore();
   const warnedRef = useRef(false);
   const endedRef = useRef(false);
 
@@ -54,9 +60,24 @@ export function TaskCard({ task }: { task: Task }) {
             <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{task.description}</p>
           )}
         </div>
-        <button className="rounded-md p-1 text-muted-foreground opacity-0 transition group-hover:opacity-100 hover:bg-muted">
-          <MoreHorizontal className="h-4 w-4" />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="rounded-md p-1 text-muted-foreground opacity-0 transition group-hover:opacity-100 hover:bg-muted focus:opacity-100 data-[state=open]:opacity-100">
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem
+              onClick={() => {
+                removeTask(task.id);
+                toast(`Deleted "${task.title}"`);
+              }}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="mr-2 h-4 w-4" /> Delete task
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="mt-3 flex items-center gap-3 text-xs">
