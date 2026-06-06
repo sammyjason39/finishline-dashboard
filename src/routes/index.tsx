@@ -107,11 +107,3 @@ function Quote({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-
-function Quote({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground">
-      {children}
-    </div>
-  );
-}
