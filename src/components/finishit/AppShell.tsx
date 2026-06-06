@@ -29,10 +29,12 @@ function NavLink({ to, icon, children }: { to: string; icon: ReactNode; children
   );
 }
 
+import logoAsset from "@/assets/finishit-logo.png.asset.json";
+
 export function Logo({ className }: { className?: string }) {
   return (
     <Link to="/" className={cn("inline-flex items-center gap-2", className)}>
-      <span className="grid h-7 w-7 place-items-center rounded-md bg-primary text-primary-foreground font-bold">F</span>
+      <img src={logoAsset.url} alt="Finishit logo" className="h-7 w-7 rounded-md object-contain" />
       <span className="text-[15px] font-bold tracking-tight text-foreground">Finishit<span className="text-primary">!</span></span>
     </Link>
   );
