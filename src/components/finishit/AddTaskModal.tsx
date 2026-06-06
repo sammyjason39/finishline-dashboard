@@ -5,8 +5,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 import { useStore, type Priority, type TaskStatus } from "@/lib/finishit-store";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+const toDayKey = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
 
 export function AddTaskModal({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const { addTask } = useStore();
@@ -17,20 +29,39 @@ export function AddTaskModal({ open, onOpenChange }: { open: boolean; onOpenChan
   const [reminderBeforeMinutes, setReminderBeforeMinutes] = useState(10);
   const [priority, setPriority] = useState<Priority>("medium");
   const [status, setStatus] = useState<TaskStatus>("not-started");
+  const [scheduledFor, setScheduledFor] = useState<Date>(new Date());
 
   const reset = () => {
     setTitle(""); setDescription(""); setAssignee("You");
     setEstimatedMinutes(30); setReminderBeforeMinutes(10);
     setPriority("medium"); setStatus("not-started");
+    setScheduledFor(new Date());
   };
 
   const submit = () => {
     if (!title.trim()) { toast.error("Add a title"); return; }
-    addTask({ title: title.trim(), description: description.trim(), assignee, estimatedMinutes, reminderBeforeMinutes, priority, status });
-    toast.success("Task created", { description: "Make progress visible." });
+    const dayKey = toDayKey(scheduledFor);
+    const todayKey = toDayKey(new Date());
+    addTask({
+      title: title.trim(),
+      description: description.trim(),
+      assignee,
+      estimatedMinutes,
+      reminderBeforeMinutes,
+      priority,
+      status,
+      dayKey,
+    });
+    toast.success(
+      dayKey === todayKey ? "Task created" : `Scheduled for ${format(scheduledFor, "EEE, MMM d")}`,
+      { description: "Make progress visible." },
+    );
     reset();
     onOpenChange(false);
   };
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
@@ -83,6 +114,33 @@ export function AddTaskModal({ open, onOpenChange }: { open: boolean; onOpenChan
                   <SelectItem value="finished">Finished</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="col-span-2 grid gap-1.5">
+              <Label>Schedule for</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("justify-start text-left font-normal", !scheduledFor && "text-muted-foreground")}
+                  >
+                    <CalendarIcon />
+                    {scheduledFor ? format(scheduledFor, "EEE, MMM d, yyyy") : <span>Pick a day</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={scheduledFor}
+                    onSelect={(d) => d && setScheduledFor(d)}
+                    disabled={(d) => d < today}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+              <p className="text-xs text-muted-foreground">
+                Pick today, or a future day — it will appear on that day's board automatically.
+              </p>
             </div>
           </div>
         </div>
