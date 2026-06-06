@@ -11,8 +11,8 @@ export const Route = createFileRoute("/")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Finishit! — Make work visible. Finish what matters." },
-      { name: "description", content: "A visual daily work dashboard for teams. See ongoing work, track focus time, and turn daily work into real progress." },
+      { title: "Finishit! — Stop Delaying, Start Finishing." },
+      { name: "description", content: "Your visual daily work dashboard. See every ongoing task, track focus time, and turn today's work into real progress." },
     ],
   }),
   component: Landing,
