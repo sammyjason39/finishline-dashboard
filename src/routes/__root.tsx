@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { ThemeProvider } from "../lib/theme";
 import { StoreProvider } from "../lib/finishit-store";
+import { ProfileProvider } from "../lib/profile";
 import { Toaster } from "sonner";
 
 function NotFoundComponent() {
@@ -143,10 +144,12 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <StoreProvider>
-          <Outlet />
-          <Toaster position="bottom-right" />
-        </StoreProvider>
+        <ProfileProvider>
+          <StoreProvider>
+            <Outlet />
+            <Toaster position="bottom-right" />
+          </StoreProvider>
+        </ProfileProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
