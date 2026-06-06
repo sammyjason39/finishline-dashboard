@@ -107,6 +107,11 @@ export function TaskCard({ task }: { task: Task }) {
             <CheckCircle2 /> Finish
           </Button>
         )}
+        {task.status === "finished" && (
+          <Button size="sm" variant="outline" onClick={() => reopenTask(task.id)}>
+            <RotateCcw /> Reopen
+          </Button>
+        )}
         <Button size="sm" variant="ghost" onClick={() => moveToTomorrow(task.id)}>
           <ArrowRightCircle /> Tomorrow
         </Button>
