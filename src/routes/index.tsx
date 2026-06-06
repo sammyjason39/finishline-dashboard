@@ -46,15 +46,15 @@ function Landing() {
       <main className="mx-auto grid max-w-7xl gap-12 px-6 py-12 lg:grid-cols-2 lg:gap-16 lg:py-20">
         <section>
           <span className="inline-flex items-center gap-2 rounded-full border border-border bg-mist px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Built for teams
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Your daily work, in focus
           </span>
           <h1 className="mt-5 text-4xl font-bold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-            Make work visible.
+            Stop Delaying,
             <br />
-            <span className="text-primary">Finish what matters.</span>
+            <span className="text-primary">Start Finishing!</span>
           </h1>
           <p className="mt-5 max-w-lg text-base text-muted-foreground sm:text-lg">
-            Finishit! helps your team see every ongoing task, track focus time, and turn daily work into real progress.
+            Finishit! is your visual daily work dashboard. See every ongoing task, track your focus time, and turn today's work into real progress.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -66,7 +66,7 @@ function Landing() {
             </Link>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
-            Built for teams who want less delay and more done.
+            For anyone who wants less delay and more done.
           </p>
 
           <div className="mt-10 grid grid-cols-2 gap-3 max-w-md">
