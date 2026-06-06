@@ -32,13 +32,6 @@ function Dashboard() {
   const [open, setOpen] = useState(false);
   const today = dateKeys.today();
   const todays = useMemo(() => tasks.filter((t) => t.dayKey === today), [tasks, today]);
-  const upcoming = useMemo(
-    () =>
-      tasks
-        .filter((t) => t.dayKey > today && t.status !== "finished")
-        .sort((a, b) => a.dayKey.localeCompare(b.dayKey)),
-    [tasks, today],
-  );
 
   return (
     <AppShell>
@@ -53,7 +46,7 @@ function Dashboard() {
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_300px]">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {columns.map((col) => {
             const items = todays.filter((t) => t.status === col.key);
             return (
@@ -76,24 +69,6 @@ function Dashboard() {
               </div>
             );
           })}
-
-          <div className="flex min-h-[200px] flex-col gap-3 rounded-2xl border border-dashed border-primary/30 bg-[color:var(--blue-soft)]/30 p-3">
-            <div className="flex items-center justify-between px-1 pt-1">
-              <div>
-                <h2 className="text-sm font-semibold text-foreground">Upcoming</h2>
-                <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Scheduled for later</p>
-              </div>
-              <span className="font-mono text-xs tabular-nums text-muted-foreground">{upcoming.length}</span>
-            </div>
-            <div className="flex flex-col gap-3">
-              {upcoming.length === 0 && (
-                <div className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-                  Nothing scheduled
-                </div>
-              )}
-              {upcoming.map((t) => <ScheduledCard key={t.id} task={t} />)}
-            </div>
-          </div>
         </div>
         <DailySummary />
       </div>
