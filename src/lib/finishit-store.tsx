@@ -168,6 +168,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ...s,
       tasks: s.tasks.map((t) => (t.id === id ? { ...t, isRunning: false, status: "finished" as TaskStatus } : t)),
     })),
+    reopenTask: (id) => setState((s) => ({
+      ...s,
+      tasks: s.tasks.map((t) => (t.id === id ? { ...t, isRunning: false, status: "ongoing" as TaskStatus } : t)),
+    })),
     moveToTomorrow: (id) => setState((s) => ({
       ...s,
       tasks: s.tasks.map((t) => (t.id === id ? { ...t, isRunning: false, dayKey: tomorrowKey(), status: "not-started" as TaskStatus } : t)),
