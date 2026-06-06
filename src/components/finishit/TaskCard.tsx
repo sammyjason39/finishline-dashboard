@@ -1,10 +1,13 @@
-import { Bell, Clock, MoreHorizontal, Pause, Play, ArrowRightCircle, CheckCircle2, RotateCcw, Trash2 } from "lucide-react";
+import { Bell, Clock, MoreHorizontal, Pause, Play, ArrowRightCircle, CalendarPlus, CheckCircle2, RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { StatusBadge } from "./StatusBadge";
 import { useStore, formatDuration, type Task } from "@/lib/finishit-store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { format } from "date-fns";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,8 +15,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const toDayKey = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
 export function TaskCard({ task }: { task: Task }) {
-  const { startTask, pauseTask, finishTask, reopenTask, moveToTomorrow, removeTask } = useStore();
+  const { startTask, pauseTask, finishTask, reopenTask, moveToTomorrow, updateTask, removeTask } = useStore();
+  const [laterOpen, setLaterOpen] = useState(false);
+  const tomorrowStart = new Date();
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+  tomorrowStart.setHours(0, 0, 0, 0);
   const warnedRef = useRef(false);
   const endedRef = useRef(false);
 
@@ -136,6 +150,28 @@ export function TaskCard({ task }: { task: Task }) {
         <Button size="sm" variant="ghost" onClick={() => moveToTomorrow(task.id)}>
           <ArrowRightCircle /> Tomorrow
         </Button>
+        <Popover open={laterOpen} onOpenChange={setLaterOpen}>
+          <PopoverTrigger asChild>
+            <Button size="sm" variant="ghost">
+              <CalendarPlus /> Later
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={undefined}
+              onSelect={(d) => {
+                if (!d) return;
+                updateTask(task.id, { dayKey: toDayKey(d) });
+                setLaterOpen(false);
+                toast.success(`Moved to ${format(d, "EEE, MMM d")}`);
+              }}
+              disabled={(d) => d < tomorrowStart}
+              initialFocus
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );
