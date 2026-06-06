@@ -1,9 +1,19 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { Calendar, ChevronDown, Moon, Sun, Users, LayoutGrid, History } from "lucide-react";
+import { Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { Calendar, ChevronDown, Moon, Sun, Users, LayoutGrid, History, LogOut } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 function NavLink({ to, icon, children }: { to: string; icon: ReactNode; children: ReactNode }) {
   return (
@@ -20,7 +30,7 @@ function NavLink({ to, icon, children }: { to: string; icon: ReactNode; children
 
 export function Logo({ className }: { className?: string }) {
   return (
-    <Link to="/dashboard" className={cn("inline-flex items-center gap-2", className)}>
+    <Link to="/" className={cn("inline-flex items-center gap-2", className)}>
       <span className="grid h-7 w-7 place-items-center rounded-md bg-primary text-primary-foreground font-bold">F</span>
       <span className="text-[15px] font-bold tracking-tight text-foreground">Finishit<span className="text-primary">!</span></span>
     </Link>
@@ -29,8 +39,25 @@ export function Logo({ className }: { className?: string }) {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { theme, toggle } = useTheme();
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+  const [email, setEmail] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+  }, []);
+
+  const initials = email ? email.slice(0, 2).toUpperCase() : "YO";
+
+  const signOut = async () => {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    router.invalidate();
+    navigate({ to: "/auth", replace: true });
+  };
 
   return (
     <div className="min-h-screen bg-[color:var(--mist)]">
@@ -56,19 +83,30 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme">
               {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
-            <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-[12px] font-semibold text-primary-foreground">
-              YO
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="grid h-8 w-8 place-items-center rounded-full bg-primary text-[12px] font-semibold text-primary-foreground">
+                  {initials}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="text-xs text-muted-foreground">Signed in as</div>
+                  <div className="truncate text-sm font-medium">{email ?? "—"}</div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={signOut} className="text-foreground">
+                  <LogOut className="mr-2 h-4 w-4" /> Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
-        {/* mobile nav */}
         <div className="md:hidden border-t border-border px-2 py-1.5 flex gap-1 overflow-x-auto">
           <NavLink to="/dashboard" icon={<LayoutGrid className="h-4 w-4" />}>Dashboard</NavLink>
           <NavLink to="/team" icon={<Users className="h-4 w-4" />}>Team</NavLink>
           <NavLink to="/history" icon={<History className="h-4 w-4" />}>Memory</NavLink>
         </div>
-        {/* avoid unused warning */}
-        <span className="hidden">{pathname}</span>
       </header>
       <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8">{children}</main>
     </div>

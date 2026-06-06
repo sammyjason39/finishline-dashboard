@@ -13,26 +13,24 @@ export interface Task {
   reminderBeforeMinutes: number;
   priority: Priority;
   status: TaskStatus;
-  /** seconds remaining (when timer running, decreases) */
   remainingSeconds: number;
-  /** seconds spent total */
   spentSeconds: number;
   isRunning: boolean;
   createdAt: string;
-  /** ISO date this task belongs to (YYYY-MM-DD) */
   dayKey: string;
 }
 
 export interface Alarm {
   id: string;
   title: string;
-  time: string; // HH:mm
+  time: string;
   repeat: "none" | "daily" | "weekdays";
 }
 
 interface State {
   tasks: Task[];
   alarms: Alarm[];
+  hydrated: boolean;
 }
 
 interface StoreApi extends State {
@@ -87,7 +85,6 @@ const sampleTasks = (): Task[] => {
     mk({ title: "Follow up invoice", description: "Ping accounting on overdue payment.", assignee: "You", estimatedMinutes: 10, remainingSeconds: 10 * 60, priority: "medium", status: "waiting" }),
     mk({ title: "Research new AI tool", description: "Evaluate 3 alternatives to current stack.", assignee: "Kemi", estimatedMinutes: 40, remainingSeconds: 40 * 60, status: "not-started" }),
     mk({ title: "Prepare meeting deck", description: "10 slides for Friday strategy sync.", assignee: "Daniel", estimatedMinutes: 60, remainingSeconds: 0, spentSeconds: 58 * 60, status: "finished", priority: "high" }),
-    // yesterday
     mk({ dayKey: y, title: "Q3 retro notes", description: "Summarize team takeaways.", assignee: "You", estimatedMinutes: 30, spentSeconds: 32 * 60, remainingSeconds: 0, status: "finished" }),
     mk({ dayKey: y, title: "Onboarding doc rewrite", description: "Needs final review.", assignee: "Mira", estimatedMinutes: 60, spentSeconds: 35 * 60, remainingSeconds: 25 * 60, status: "ongoing" }),
   ];
@@ -95,35 +92,46 @@ const sampleTasks = (): Task[] => {
 
 const STORAGE_KEY = "finishit:v1";
 
-function load(): State {
-  if (typeof window === "undefined") return { tasks: [], alarms: [] };
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as State;
-  } catch {}
-  return { tasks: sampleTasks(), alarms: [{ id: crypto.randomUUID(), title: "Daily wrap-up", time: "17:30", repeat: "weekdays" }] };
-}
-
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<State>(() => load());
+  // Start with empty state on both server and client to avoid hydration mismatch
+  const [state, setState] = useState<State>({ tasks: [], alarms: [], hydrated: false });
 
-  // Persist
+  // Hydrate from localStorage after mount (client-only)
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<State>;
+        setState({ tasks: parsed.tasks ?? [], alarms: parsed.alarms ?? [], hydrated: true });
+        return;
+      }
+    } catch {}
+    setState({
+      tasks: sampleTasks(),
+      alarms: [{ id: crypto.randomUUID(), title: "Daily wrap-up", time: "17:30", repeat: "weekdays" }],
+      hydrated: true,
+    });
+  }, []);
+
+  // Persist after hydration
+  useEffect(() => {
+    if (!state.hydrated) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks: state.tasks, alarms: state.alarms }));
+    } catch {}
   }, [state]);
 
   // Tick timers
   useEffect(() => {
     const id = setInterval(() => {
       setState((s) => {
+        if (!s.hydrated) return s;
         let changed = false;
         const tasks = s.tasks.map((t) => {
           if (!t.isRunning) return t;
-          const remaining = Math.max(0, t.remainingSeconds - 1);
           changed = true;
-          if (remaining === 0) {
-            return { ...t, remainingSeconds: 0, spentSeconds: t.spentSeconds + 1, isRunning: false };
-          }
+          const remaining = Math.max(0, t.remainingSeconds - 1);
+          if (remaining === 0) return { ...t, remainingSeconds: 0, spentSeconds: t.spentSeconds + 1, isRunning: false };
           return { ...t, remainingSeconds: remaining, spentSeconds: t.spentSeconds + 1 };
         });
         return changed ? { ...s, tasks } : s;
@@ -152,9 +160,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     updateTask: (id, patch) => setState((s) => ({ ...s, tasks: s.tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)) })),
     startTask: (id) => setState((s) => ({
       ...s,
-      tasks: s.tasks.map((t) =>
-        t.id === id ? { ...t, isRunning: true, status: "ongoing" as TaskStatus } : t,
-      ),
+      tasks: s.tasks.map((t) => (t.id === id ? { ...t, isRunning: true, status: "ongoing" as TaskStatus } : t)),
     })),
     pauseTask: (id) => setState((s) => ({ ...s, tasks: s.tasks.map((t) => (t.id === id ? { ...t, isRunning: false } : t)) })),
     finishTask: (id) => setState((s) => ({

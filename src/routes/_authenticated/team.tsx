@@ -3,7 +3,7 @@ import { AppShell } from "@/components/finishit/AppShell";
 import { useStore, dateKeys, formatDuration } from "@/lib/finishit-store";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/team")({
+export const Route = createFileRoute("/_authenticated/team")({
   head: () => ({
     meta: [
       { title: "Team Visibility · Finishit!" },
