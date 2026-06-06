@@ -144,10 +144,12 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <StoreProvider>
-          <Outlet />
-          <Toaster position="bottom-right" />
-        </StoreProvider>
+        <ProfileProvider>
+          <StoreProvider>
+            <Outlet />
+            <Toaster position="bottom-right" />
+          </StoreProvider>
+        </ProfileProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
