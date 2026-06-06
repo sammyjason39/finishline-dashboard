@@ -9,7 +9,7 @@ import { DailySummary } from "@/components/finishit/DailySummary";
 import { AlarmPanel } from "@/components/finishit/AlarmPanel";
 import { useStore, dateKeys, type TaskStatus } from "@/lib/finishit-store";
 
-export const Route = createFileRoute("/dashboard")({
+export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
       { title: "Today's Work Board · Finishit!" },

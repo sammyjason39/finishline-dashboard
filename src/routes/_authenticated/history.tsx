@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/finishit/StatusBadge";
 import { ArrowRight, Archive, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/history")({
+export const Route = createFileRoute("/_authenticated/history")({
   head: () => ({
     meta: [
       { title: "Daily Work Memory · Finishit!" },
