@@ -17,6 +17,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
       { name: "description", content: "See everything your team is working on today." },
     ],
   }),
+  ssr: false,
   component: Dashboard,
 });
 
