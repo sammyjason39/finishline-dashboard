@@ -41,17 +41,13 @@ export function Logo({ className }: { className?: string }) {
 export function AppShell({ children }: { children: ReactNode }) {
   const { theme, toggle } = useTheme();
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
-  const [email, setEmail] = useState<string | null>(null);
   const navigate = useNavigate();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { email, displayName, avatarUrl } = useProfile();
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
-  }, []);
-
-  const initials = email ? email.slice(0, 2).toUpperCase() : "YO";
-  const displayName = email ? email.split("@")[0] : "your";
+  const initials = (displayName || email || "YO").slice(0, 2).toUpperCase();
+  const firstName = displayName || (email ? email.split("@")[0] : "your");
 
   const signOut = async () => {
     await queryClient.cancelQueries();
