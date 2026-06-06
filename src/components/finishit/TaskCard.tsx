@@ -1,4 +1,4 @@
-import { Bell, Clock, MoreHorizontal, Pause, Play, ArrowRightCircle, CheckCircle2 } from "lucide-react";
+import { Bell, Clock, MoreHorizontal, Pause, Play, ArrowRightCircle, CheckCircle2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "./StatusBadge";
 import { useStore, formatDuration, type Task } from "@/lib/finishit-store";
@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useEffect, useRef } from "react";
 
 export function TaskCard({ task }: { task: Task }) {
-  const { startTask, pauseTask, finishTask, moveToTomorrow } = useStore();
+  const { startTask, pauseTask, finishTask, reopenTask, moveToTomorrow } = useStore();
   const warnedRef = useRef(false);
   const endedRef = useRef(false);
 
@@ -105,6 +105,11 @@ export function TaskCard({ task }: { task: Task }) {
         {task.status !== "finished" && (
           <Button size="sm" variant="outline" onClick={() => finishTask(task.id)}>
             <CheckCircle2 /> Finish
+          </Button>
+        )}
+        {task.status === "finished" && (
+          <Button size="sm" variant="outline" onClick={() => reopenTask(task.id)}>
+            <RotateCcw /> Reopen
           </Button>
         )}
         <Button size="sm" variant="ghost" onClick={() => moveToTomorrow(task.id)}>

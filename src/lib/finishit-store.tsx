@@ -39,6 +39,7 @@ interface StoreApi extends State {
   startTask: (id: string) => void;
   pauseTask: (id: string) => void;
   finishTask: (id: string) => void;
+  reopenTask: (id: string) => void;
   moveToTomorrow: (id: string) => void;
   removeTask: (id: string) => void;
   addAlarm: (a: Omit<Alarm, "id">) => void;
@@ -166,6 +167,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     finishTask: (id) => setState((s) => ({
       ...s,
       tasks: s.tasks.map((t) => (t.id === id ? { ...t, isRunning: false, status: "finished" as TaskStatus } : t)),
+    })),
+    reopenTask: (id) => setState((s) => ({
+      ...s,
+      tasks: s.tasks.map((t) => (t.id === id ? { ...t, isRunning: false, status: "ongoing" as TaskStatus } : t)),
     })),
     moveToTomorrow: (id) => setState((s) => ({
       ...s,
