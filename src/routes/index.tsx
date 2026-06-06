@@ -100,24 +100,10 @@ function Landing() {
   );
 }
 
-function PreviewCard({ title, assignee, status, time, pct }: { title: string; assignee: string; status: "ongoing" | "finished" | "waiting" | "not-started"; time: string; pct: number }) {
+function Quote({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-border bg-background p-3">
-      <div className="flex items-center justify-between">
-        <StatusBadge status={status} />
-        <span className="font-mono text-xs tabular-nums text-foreground">{time}</span>
-      </div>
-      <div className="mt-2 flex items-center justify-between">
-        <p className="text-sm font-medium text-foreground">{title}</p>
-        {status === "finished" && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
-      </div>
-      <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-        <div className="grid h-5 w-5 place-items-center rounded-full bg-[color:var(--blue-soft)] text-[10px] font-semibold text-primary">{assignee[0]}</div>
-        {assignee}
-      </div>
-      <div className="mt-2 h-1 overflow-hidden rounded-full bg-muted">
-        <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
-      </div>
+    <div className="rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground">
+      {children}
     </div>
   );
 }
