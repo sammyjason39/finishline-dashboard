@@ -1,13 +1,19 @@
-import { Bell, Clock, MoreHorizontal, Pause, Play, ArrowRightCircle, CheckCircle2, RotateCcw } from "lucide-react";
+import { Bell, Clock, MoreHorizontal, Pause, Play, ArrowRightCircle, CheckCircle2, RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "./StatusBadge";
 import { useStore, formatDuration, type Task } from "@/lib/finishit-store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useEffect, useRef } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function TaskCard({ task }: { task: Task }) {
-  const { startTask, pauseTask, finishTask, reopenTask, moveToTomorrow } = useStore();
+  const { startTask, pauseTask, finishTask, reopenTask, moveToTomorrow, removeTask } = useStore();
   const warnedRef = useRef(false);
   const endedRef = useRef(false);
 
