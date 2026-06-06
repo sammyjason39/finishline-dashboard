@@ -108,8 +108,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     } catch {}
     setState({
-      tasks: sampleTasks(),
-      alarms: [{ id: crypto.randomUUID(), title: "Daily wrap-up", time: "17:30", repeat: "weekdays" }],
+      tasks: [],
+      alarms: [],
       hydrated: true,
     });
   }, []);
