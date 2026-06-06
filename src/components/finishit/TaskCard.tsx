@@ -176,7 +176,3 @@ export function TaskCard({ task }: { task: Task }) {
     </div>
   );
 }
-      </div>
-    </div>
-  );
-}
