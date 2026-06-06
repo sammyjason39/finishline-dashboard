@@ -4,7 +4,6 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/finishit/AppShell";
 import { TaskCard } from "@/components/finishit/TaskCard";
-import { ScheduledCard } from "@/components/finishit/ScheduledCard";
 import { AddTaskModal } from "@/components/finishit/AddTaskModal";
 import { DailySummary } from "@/components/finishit/DailySummary";
 import { AlarmPanel } from "@/components/finishit/AlarmPanel";
