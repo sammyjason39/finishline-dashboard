@@ -1,16 +1,20 @@
-## Goal
-Let users roll a finished task back to "ongoing" so they can keep working on it.
+## Replace preview card with image (light/dark)
 
-## Changes
+Replace the mock "Today's Work Board" preview `<section>` in `src/routes/index.tsx` with the two uploaded images (light + dark variants), keeping the existing rounded corners and shadow.
 
-1. **`src/lib/finishit-store.tsx`**
-   - Add `reopenTask: (id: string) => void` to the store type and implementation.
-   - Sets `status: "ongoing"`, `isRunning: false`, and keeps existing `spentSeconds`/`remainingSeconds` as-is (if `remainingSeconds` is 0, leave it — user can still continue tracking time).
+### Steps
 
-2. **`src/components/finishit/TaskCard.tsx`**
-   - When `task.status === "finished"`, show a "Reopen" button (with a rotate-left icon) that calls `reopenTask(task.id)`.
-   - Keep the existing "Tomorrow" button available for finished tasks too.
+1. Upload both images as Lovable Assets:
+   - `user-uploads://IMG_1_Bright.webp` → `src/assets/hero-light.webp.asset.json`
+   - `user-uploads://IMG_2_Dark.webp` → `src/assets/hero-dark.webp.asset.json`
 
-## Notes
-- No backend/schema changes; finishit store is local state.
-- History page (`history.tsx`) still reads finished tasks from past days — reopening only applies to today's finished items via the dashboard card. (Let me know if you also want reopen from the history view.)
+2. Edit `src/routes/index.tsx`:
+   - Import both asset JSONs and `useTheme` is already imported.
+   - Replace the entire `<section className="relative">…</section>` preview block with an `<img>` (or two — light shown by default, dark shown via `dark:` class) using:
+     - `className="w-full aspect-[4/5] object-cover rounded-2xl shadow-xl shadow-primary/5"`
+     - Show light image with `block dark:hidden`, dark image with `hidden dark:block`.
+   - Remove now-unused `PreviewCard`, `StatusBadge`, `CheckCircle2` references from this file.
+
+### Notes
+- 4:5 vertical via `aspect-[4/5]`.
+- Tailwind `dark:` variant handles theme switching (root `dark` class already toggled by ThemeProvider).
