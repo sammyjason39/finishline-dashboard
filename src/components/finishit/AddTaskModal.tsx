@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,7 +20,7 @@ const toDayKey = (d: Date) => {
   return `${y}-${m}-${day}`;
 };
 
-export function AddTaskModal({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+export function AddTaskModal({ open, onOpenChange, initialDate }: { open: boolean; onOpenChange: (o: boolean) => void; initialDate?: Date }) {
   const { addTask } = useStore();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -29,13 +29,17 @@ export function AddTaskModal({ open, onOpenChange }: { open: boolean; onOpenChan
   const [reminderBeforeMinutes, setReminderBeforeMinutes] = useState(10);
   const [priority, setPriority] = useState<Priority>("medium");
   const [status, setStatus] = useState<TaskStatus>("not-started");
-  const [scheduledFor, setScheduledFor] = useState<Date>(new Date());
+  const [scheduledFor, setScheduledFor] = useState<Date>(initialDate ?? new Date());
+
+  useEffect(() => {
+    if (open && initialDate) setScheduledFor(initialDate);
+  }, [open, initialDate]);
 
   const reset = () => {
     setTitle(""); setDescription(""); setAssignee("You");
     setEstimatedMinutes(30); setReminderBeforeMinutes(10);
     setPriority("medium"); setStatus("not-started");
-    setScheduledFor(new Date());
+    setScheduledFor(initialDate ?? new Date());
   };
 
   const submit = () => {

@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
-import { Calendar, ChevronDown, Moon, Sun, LayoutGrid, History, LogOut, User as UserIcon } from "lucide-react";
+import { Calendar, ChevronDown, Moon, Sun, LayoutGrid, History, LogOut, User as UserIcon, CalendarDays } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -66,6 +66,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Logo />
           <div className="hidden md:flex items-center gap-1 ml-2">
             <NavLink to="/dashboard" icon={<LayoutGrid className="h-4 w-4" />}>Dashboard</NavLink>
+            <NavLink to="/upcoming" icon={<CalendarDays className="h-4 w-4" />}>Upcoming</NavLink>
             <NavLink to="/history" icon={<History className="h-4 w-4" />}>Memory</NavLink>
           </div>
 
@@ -111,7 +112,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
         <div className="md:hidden border-t border-border px-2 py-1.5 flex gap-1 overflow-x-auto">
           <NavLink to="/dashboard" icon={<LayoutGrid className="h-4 w-4" />}>Dashboard</NavLink>
-          
+          <NavLink to="/upcoming" icon={<CalendarDays className="h-4 w-4" />}>Upcoming</NavLink>
           <NavLink to="/history" icon={<History className="h-4 w-4" />}>Memory</NavLink>
         </div>
       </header>
