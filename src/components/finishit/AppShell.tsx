@@ -77,7 +77,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <ChevronDown className="h-3 w-3" />
             </button>
             <button className="hidden lg:inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-mono text-muted-foreground hover:bg-muted">
-              <span>Team · ConextLab</span>
+              <span>{displayName}'s workflow</span>
               <ChevronDown className="h-3 w-3" />
             </button>
             <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme">
