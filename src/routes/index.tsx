@@ -1,14 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/finishit/AppShell";
 import { StatusBadge } from "@/components/finishit/StatusBadge";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { useTheme } from "@/lib/theme";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Finishit! — Make work visible. Finish what matters." },
@@ -21,20 +21,29 @@ export const Route = createFileRoute("/")({
 function Landing() {
   const nav = useNavigate();
   const { theme, toggle } = useTheme();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+
+  // If signed in, send them straight to the dashboard
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) nav({ to: "/dashboard", replace: true });
+    });
+  }, [nav]);
 
   return (
     <div className="min-h-screen bg-background">
       <header className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         <Logo />
-        <button onClick={toggle} className="font-mono text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">
-          {theme === "dark" ? "Light" : "Dark"} mode
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={toggle} className="font-mono text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">
+            {theme === "dark" ? "Light" : "Dark"} mode
+          </button>
+          <Link to="/auth">
+            <Button variant="outline" size="sm">Sign in</Button>
+          </Link>
+        </div>
       </header>
 
       <main className="mx-auto grid max-w-7xl gap-12 px-6 py-12 lg:grid-cols-2 lg:gap-16 lg:py-20">
-        {/* Left: hero + login */}
         <section>
           <span className="inline-flex items-center gap-2 rounded-full border border-border bg-mist px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Built for teams
@@ -48,37 +57,24 @@ function Landing() {
             Finishit! helps your team see every ongoing task, track focus time, and turn daily work into real progress.
           </p>
 
-          <form
-            className="mt-8 max-w-md rounded-2xl border border-border bg-card p-6"
-            onSubmit={(e) => { e.preventDefault(); nav({ to: "/dashboard" }); }}
-          >
-            <div className="grid gap-4">
-              <div className="grid gap-1.5">
-                <Label htmlFor="email">Work email</Label>
-                <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@team.com" />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
-              </div>
-              <Button type="submit" className="w-full">
-                Log in <ArrowRight />
-              </Button>
-              <div className="relative my-1">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-                <div className="relative flex justify-center"><span className="bg-card px-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">or</span></div>
-              </div>
-              <Button type="button" variant="outline" className="w-full" onClick={() => nav({ to: "/dashboard" })}>
-                <GoogleIcon /> Continue with Google
-              </Button>
-              <p className="text-center text-xs text-muted-foreground">
-                Built for teams who want less delay and more done.
-              </p>
-            </div>
-          </form>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link to="/auth">
+              <Button size="lg">Get started <ArrowRight /></Button>
+            </Link>
+            <Link to="/auth">
+              <Button size="lg" variant="outline">Sign in</Button>
+            </Link>
+          </div>
+          <p className="mt-4 text-xs text-muted-foreground">
+            Built for teams who want less delay and more done.
+          </p>
+
+          <div className="mt-10 grid grid-cols-2 gap-3 max-w-md">
+            <Quote>“Every ongoing task, in one place.”</Quote>
+            <Quote>“Less guessing. More finishing.”</Quote>
+          </div>
         </section>
 
-        {/* Right: dashboard preview */}
         <section className="relative">
           <div className="rounded-2xl border border-border bg-card p-5 shadow-xl shadow-primary/5">
             <div className="flex items-center justify-between border-b border-border pb-3">
@@ -99,18 +95,13 @@ function Landing() {
               <span className="text-primary">3h 12m focus</span>
             </div>
           </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <Quote>“Every ongoing task, in one place.”</Quote>
-            <Quote>“Less guessing. More finishing.”</Quote>
-          </div>
         </section>
       </main>
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6 text-xs text-muted-foreground">
           <span className="font-mono uppercase tracking-wider">Finishit! · by ConextLab</span>
-          <Link to="/dashboard" className="hover:text-foreground">Open demo dashboard →</Link>
+          <Link to="/auth" className="hover:text-foreground">Open the dashboard →</Link>
         </div>
       </footer>
     </div>
@@ -144,13 +135,5 @@ function Quote({ children }: { children: React.ReactNode }) {
     <div className="rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground">
       {children}
     </div>
-  );
-}
-
-function GoogleIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
-      <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.3-1.6 3.9-5.5 3.9-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 3.5 14.7 2.6 12 2.6 6.8 2.6 2.6 6.8 2.6 12s4.2 9.4 9.4 9.4c5.4 0 9-3.8 9-9.2 0-.6-.1-1.1-.2-1.7H12z"/>
-    </svg>
   );
 }
