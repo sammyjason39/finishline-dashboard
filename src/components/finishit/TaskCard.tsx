@@ -150,6 +150,32 @@ export function TaskCard({ task }: { task: Task }) {
         <Button size="sm" variant="ghost" onClick={() => moveToTomorrow(task.id)}>
           <ArrowRightCircle /> Tomorrow
         </Button>
+        <Popover open={laterOpen} onOpenChange={setLaterOpen}>
+          <PopoverTrigger asChild>
+            <Button size="sm" variant="ghost">
+              <CalendarPlus /> Later
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={undefined}
+              onSelect={(d) => {
+                if (!d) return;
+                updateTask(task.id, { dayKey: toDayKey(d) });
+                setLaterOpen(false);
+                toast.success(`Moved to ${format(d, "EEE, MMM d")}`);
+              }}
+              disabled={(d) => d < tomorrowStart}
+              initialFocus
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+  );
+}
       </div>
     </div>
   );
