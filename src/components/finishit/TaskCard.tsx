@@ -1,10 +1,13 @@
-import { Bell, Clock, MoreHorizontal, Pause, Play, ArrowRightCircle, CheckCircle2, RotateCcw, Trash2 } from "lucide-react";
+import { Bell, Clock, MoreHorizontal, Pause, Play, ArrowRightCircle, CalendarPlus, CheckCircle2, RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { StatusBadge } from "./StatusBadge";
 import { useStore, formatDuration, type Task } from "@/lib/finishit-store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { format } from "date-fns";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,8 +15,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const toDayKey = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
 export function TaskCard({ task }: { task: Task }) {
-  const { startTask, pauseTask, finishTask, reopenTask, moveToTomorrow, removeTask } = useStore();
+  const { startTask, pauseTask, finishTask, reopenTask, moveToTomorrow, updateTask, removeTask } = useStore();
+  const [laterOpen, setLaterOpen] = useState(false);
+  const tomorrowStart = new Date();
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+  tomorrowStart.setHours(0, 0, 0, 0);
   const warnedRef = useRef(false);
   const endedRef = useRef(false);
 
