@@ -2,10 +2,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/finishit/AppShell";
-import { StatusBadge } from "@/components/finishit/StatusBadge";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 import { supabase } from "@/integrations/supabase/client";
+import heroLight from "@/assets/hero-light.webp.asset.json";
+import heroDark from "@/assets/hero-dark.webp.asset.json";
 
 export const Route = createFileRoute("/")({
   ssr: false,
