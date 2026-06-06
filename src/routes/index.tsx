@@ -77,25 +77,16 @@ function Landing() {
         </section>
 
         <section className="relative">
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-xl shadow-primary/5">
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <div>
-                <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Today's Work Board</p>
-                <h3 className="text-sm font-semibold text-foreground">Your day, at a glance.</h3>
-              </div>
-              <span className="rounded-md bg-[color:var(--blue-soft)] px-2 py-0.5 font-mono text-[10px] uppercase text-primary">Live</span>
-            </div>
-            <div className="grid gap-3 pt-4">
-              <PreviewCard title="Write campaign script" assignee="You" status="ongoing" time="32:14" pct={62} />
-              <PreviewCard title="Review client proposal" assignee="You" status="ongoing" time="18:00" pct={40} />
-              <PreviewCard title="Prepare meeting deck" assignee="You" status="finished" time="58:02" pct={100} />
-              <PreviewCard title="Follow up invoice" assignee="You" status="waiting" time="10:00" pct={0} />
-            </div>
-            <div className="mt-4 flex items-center justify-between border-t border-border pt-3 font-mono text-[11px] text-muted-foreground">
-              <span>4 tasks · 1 finished · 2 ongoing</span>
-              <span className="text-primary">3h 12m focus</span>
-            </div>
-          </div>
+          <img
+            src={heroLight.url}
+            alt="Finishit dashboard preview"
+            className="block dark:hidden w-full aspect-[4/5] object-cover rounded-2xl shadow-xl shadow-primary/5"
+          />
+          <img
+            src={heroDark.url}
+            alt="Finishit dashboard preview"
+            className="hidden dark:block w-full aspect-[4/5] object-cover rounded-2xl shadow-xl shadow-primary/5"
+          />
         </section>
       </main>
 
