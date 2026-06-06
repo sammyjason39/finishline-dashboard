@@ -50,6 +50,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, []);
 
   const initials = email ? email.slice(0, 2).toUpperCase() : "YO";
+  const displayName = email ? email.split("@")[0] : "your";
 
   const signOut = async () => {
     await queryClient.cancelQueries();
