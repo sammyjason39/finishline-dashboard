@@ -24,6 +24,7 @@ import {
 } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/history")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Daily Work Memory · Finishit!" },
