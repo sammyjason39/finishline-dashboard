@@ -77,21 +77,33 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span>{displayName}'s workflow</span>
               <ChevronDown className="h-3 w-3" />
             </button>
+            <button className="hidden lg:inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-mono text-muted-foreground hover:bg-muted">
+              <span>{firstName}'s workflow</span>
+              <ChevronDown className="h-3 w-3" />
+            </button>
             <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme">
               {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="grid h-8 w-8 place-items-center rounded-full bg-primary text-[12px] font-semibold text-primary-foreground">
-                  {initials}
+                <button className="grid h-8 w-8 place-items-center overflow-hidden rounded-full bg-primary text-[12px] font-semibold text-primary-foreground">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt={firstName} className="h-full w-full object-cover" />
+                  ) : (
+                    initials
+                  )}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel className="font-normal">
                   <div className="text-xs text-muted-foreground">Signed in as</div>
-                  <div className="truncate text-sm font-medium">{email ?? "—"}</div>
+                  <div className="truncate text-sm font-medium">{displayName || email || "—"}</div>
+                  {displayName && email ? <div className="truncate text-xs text-muted-foreground">{email}</div> : null}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate({ to: "/profile" })} className="text-foreground">
+                  <UserIcon className="mr-2 h-4 w-4" /> Edit profile
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={signOut} className="text-foreground">
                   <LogOut className="mr-2 h-4 w-4" /> Sign out
                 </DropdownMenuItem>
