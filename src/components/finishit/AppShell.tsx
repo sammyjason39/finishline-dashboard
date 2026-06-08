@@ -67,7 +67,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="hidden md:flex items-center gap-1 ml-2">
             <NavLink to="/dashboard" icon={<LayoutGrid className="h-4 w-4" />}>Dashboard</NavLink>
             <NavLink to="/upcoming" icon={<CalendarDays className="h-4 w-4" />}>Upcoming</NavLink>
-            <NavLink to="/history" icon={<History className="h-4 w-4" />}>Memory</NavLink>
           </div>
 
           <div className="ml-auto flex items-center gap-2">
