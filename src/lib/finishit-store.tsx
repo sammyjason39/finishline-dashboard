@@ -202,6 +202,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       tasks: s.tasks.map((t) => (t.id === id ? { ...t, isRunning: false, dayKey: tomorrowKey(), status: "not-started" as TaskStatus } : t)),
     })),
     removeTask: (id) => setState((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== id) })),
+    archiveTask: (id) => setState((s) => ({
+      ...s,
+      tasks: s.tasks.map((t) => (t.id === id ? {
+        ...t,
+        isRunning: false,
+        status: "finished" as TaskStatus,
+        archivedAt: new Date().toISOString(),
+        finalSpentSeconds: t.spentSeconds,
+      } : t)),
+    })),
+    unarchiveTask: (id) => setState((s) => ({
+      ...s,
+      tasks: s.tasks.map((t) => (t.id === id ? { ...t, archivedAt: undefined, dayKey: todayKey() } : t)),
+    })),
+
     addAlarm: (a) => setState((s) => ({ ...s, alarms: [...s.alarms, { id: crypto.randomUUID(), ...a }] })),
     removeAlarm: (id) => setState((s) => ({ ...s, alarms: s.alarms.filter((a) => a.id !== id) })),
     addNote: (n) => setState((s) => ({
