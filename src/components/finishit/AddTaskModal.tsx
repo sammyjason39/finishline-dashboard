@@ -36,7 +36,8 @@ export function AddTaskModal({ open, onOpenChange, initialDate }: { open: boolea
   }, [open, initialDate]);
 
   const reset = () => {
-    setTitle(""); setDescription(""); setAssignee("You");
+    setTitle(""); setDescription("");
+    setAssigneeUserId(currentUserId ?? "self");
     setEstimatedMinutes(30); setReminderBeforeMinutes(10);
     setPriority("medium"); setStatus("not-started");
     setScheduledFor(initialDate ?? new Date());
@@ -46,10 +47,12 @@ export function AddTaskModal({ open, onOpenChange, initialDate }: { open: boolea
     if (!title.trim()) { toast.error("Add a title"); return; }
     const dayKey = toDayKey(scheduledFor);
     const todayKey = toDayKey(new Date());
+    const picked = assignableUsers.find((u) => u.id === assigneeUserId);
     addTask({
       title: title.trim(),
       description: description.trim(),
-      assignee,
+      assignee: picked?.label ?? "You",
+      assigneeUserId: assigneeUserId && assigneeUserId !== "self" ? assigneeUserId : undefined,
       estimatedMinutes,
       reminderBeforeMinutes,
       priority,
