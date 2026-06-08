@@ -78,11 +78,16 @@ export function TaskCard({ task }: { task: Task }) {
     )}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <StatusBadge status={task.status} />
             <span className={cn("font-mono text-[10px] uppercase tracking-wider", priorityColor)}>
               {task.priority}
             </span>
+            {collabBadge && (
+              <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium", collabBadge.cls)}>
+                {collabBadge.text}
+              </span>
+            )}
           </div>
           <h3 className="mt-2 text-[15px] font-semibold leading-snug text-foreground">{task.title}</h3>
           {task.description && (
