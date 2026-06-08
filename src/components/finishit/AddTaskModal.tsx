@@ -21,10 +21,10 @@ const toDayKey = (d: Date) => {
 };
 
 export function AddTaskModal({ open, onOpenChange, initialDate }: { open: boolean; onOpenChange: (o: boolean) => void; initialDate?: Date }) {
-  const { addTask } = useStore();
+  const { addTask, assignableUsers, currentUserId } = useStore();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [assignee, setAssignee] = useState("You");
+  const [assigneeUserId, setAssigneeUserId] = useState<string>(currentUserId ?? "self");
   const [estimatedMinutes, setEstimatedMinutes] = useState(30);
   const [reminderBeforeMinutes, setReminderBeforeMinutes] = useState(10);
   const [priority, setPriority] = useState<Priority>("medium");
