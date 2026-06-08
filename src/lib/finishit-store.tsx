@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export type TaskStatus = "not-started" | "ongoing" | "waiting" | "finished";
 export type Priority = "low" | "medium" | "high";
@@ -18,10 +19,9 @@ export interface Task {
   isRunning: boolean;
   createdAt: string;
   dayKey: string;
-  archivedAt?: string; // ISO timestamp when sent to insight
-  finalSpentSeconds?: number; // snapshot at archive
+  archivedAt?: string;
+  finalSpentSeconds?: number;
 }
-
 
 export interface Alarm {
   id: string;
@@ -37,7 +37,7 @@ export interface Note {
   title: string;
   content: string;
   priority: NotePriority;
-  remindAt?: string; // ISO date string (YYYY-MM-DD) or full ISO
+  remindAt?: string;
   createdAt: string;
   done: boolean;
 }
@@ -68,7 +68,6 @@ interface StoreApi extends State {
   removeNote: (id: string) => void;
 }
 
-
 const StoreContext = createContext<StoreApi | null>(null);
 
 const todayKey = () => new Date().toISOString().slice(0, 10);
@@ -83,37 +82,6 @@ const yesterdayKey = () => {
   return d.toISOString().slice(0, 10);
 };
 
-const sampleTasks = (): Task[] => {
-  const t = todayKey();
-  const y = yesterdayKey();
-  const mk = (over: Partial<Task>): Task => ({
-    id: crypto.randomUUID(),
-    title: "",
-    description: "",
-    assignee: "You",
-    estimatedMinutes: 30,
-    reminderBeforeMinutes: 10,
-    priority: "medium",
-    status: "not-started",
-    remainingSeconds: 30 * 60,
-    spentSeconds: 0,
-    isRunning: false,
-    createdAt: new Date().toISOString(),
-    dayKey: t,
-    ...over,
-  });
-  return [
-    mk({ title: "Write AI campaign script", description: "Draft hooks + 3 ad variations for next launch.", assignee: "Aisha", estimatedMinutes: 45, remainingSeconds: 45 * 60, priority: "high", status: "ongoing", isRunning: true, spentSeconds: 12 * 60 }),
-    mk({ title: "Review client proposal", description: "Final pass on pricing section before sending.", assignee: "Daniel", estimatedMinutes: 30, remainingSeconds: 18 * 60, spentSeconds: 12 * 60, status: "ongoing" }),
-    mk({ title: "Edit webinar poster", description: "Match new brand palette + export sizes.", assignee: "Mira", estimatedMinutes: 25, remainingSeconds: 25 * 60, priority: "low", status: "not-started" }),
-    mk({ title: "Follow up invoice", description: "Ping accounting on overdue payment.", assignee: "You", estimatedMinutes: 10, remainingSeconds: 10 * 60, priority: "medium", status: "waiting" }),
-    mk({ title: "Research new AI tool", description: "Evaluate 3 alternatives to current stack.", assignee: "Kemi", estimatedMinutes: 40, remainingSeconds: 40 * 60, status: "not-started" }),
-    mk({ title: "Prepare meeting deck", description: "10 slides for Friday strategy sync.", assignee: "Daniel", estimatedMinutes: 60, remainingSeconds: 0, spentSeconds: 58 * 60, status: "finished", priority: "high" }),
-    mk({ dayKey: y, title: "Q3 retro notes", description: "Summarize team takeaways.", assignee: "You", estimatedMinutes: 30, spentSeconds: 32 * 60, remainingSeconds: 0, status: "finished" }),
-    mk({ dayKey: y, title: "Onboarding doc rewrite", description: "Needs final review.", assignee: "Mira", estimatedMinutes: 60, spentSeconds: 35 * 60, remainingSeconds: 25 * 60, status: "ongoing" }),
-  ];
-};
-
 const STORAGE_KEY = "finishit:v1";
 const BACKUP_KEY = "finishit:v1:backup";
 
@@ -124,44 +92,141 @@ function loadPersisted(): Partial<State> | null {
       if (!raw) continue;
       const parsed = JSON.parse(raw) as Partial<State>;
       if (parsed && typeof parsed === "object") return parsed;
-    } catch {
-      // try next key
-    }
+    } catch {}
   }
   return null;
 }
 
-export function StoreProvider({ children }: { children: ReactNode }) {
-  // Start with empty state on both server and client to avoid hydration mismatch
-  const [state, setState] = useState<State>({ tasks: [], alarms: [], notes: [], hydrated: false });
+// ---------- mappers ----------
+type DbTask = {
+  id: string; title: string; description: string; assignee: string; assignee_avatar: string | null;
+  estimated_minutes: number; reminder_before_minutes: number; priority: Priority; status: TaskStatus;
+  remaining_seconds: number; spent_seconds: number; is_running: boolean;
+  day_key: string; archived_at: string | null; final_spent_seconds: number | null;
+  created_at: string;
+};
+function fromDbTask(r: DbTask): Task {
+  return {
+    id: r.id, title: r.title, description: r.description ?? "", assignee: r.assignee,
+    assigneeAvatar: r.assignee_avatar ?? undefined,
+    estimatedMinutes: r.estimated_minutes, reminderBeforeMinutes: r.reminder_before_minutes,
+    priority: r.priority, status: r.status,
+    remainingSeconds: r.remaining_seconds, spentSeconds: r.spent_seconds,
+    isRunning: r.is_running, createdAt: r.created_at, dayKey: r.day_key,
+    archivedAt: r.archived_at ?? undefined,
+    finalSpentSeconds: r.final_spent_seconds ?? undefined,
+  };
+}
+function toDbTaskPatch(p: Partial<Task>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (p.title !== undefined) out.title = p.title;
+  if (p.description !== undefined) out.description = p.description;
+  if (p.assignee !== undefined) out.assignee = p.assignee;
+  if (p.assigneeAvatar !== undefined) out.assignee_avatar = p.assigneeAvatar ?? null;
+  if (p.estimatedMinutes !== undefined) out.estimated_minutes = p.estimatedMinutes;
+  if (p.reminderBeforeMinutes !== undefined) out.reminder_before_minutes = p.reminderBeforeMinutes;
+  if (p.priority !== undefined) out.priority = p.priority;
+  if (p.status !== undefined) out.status = p.status;
+  if (p.remainingSeconds !== undefined) out.remaining_seconds = p.remainingSeconds;
+  if (p.spentSeconds !== undefined) out.spent_seconds = p.spentSeconds;
+  if (p.isRunning !== undefined) out.is_running = p.isRunning;
+  if (p.dayKey !== undefined) out.day_key = p.dayKey;
+  if ("archivedAt" in p) out.archived_at = p.archivedAt ?? null;
+  if ("finalSpentSeconds" in p) out.final_spent_seconds = p.finalSpentSeconds ?? null;
+  return out;
+}
 
-  // Hydrate from localStorage after mount (client-only)
+type DbNote = {
+  id: string; title: string; content: string; priority: NotePriority;
+  remind_at: string | null; done: boolean; created_at: string;
+};
+function fromDbNote(r: DbNote): Note {
+  return {
+    id: r.id, title: r.title, content: r.content ?? "", priority: r.priority,
+    remindAt: r.remind_at ?? undefined, createdAt: r.created_at, done: r.done,
+  };
+}
+function toDbNotePatch(p: Partial<Note>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (p.title !== undefined) out.title = p.title;
+  if (p.content !== undefined) out.content = p.content;
+  if (p.priority !== undefined) out.priority = p.priority;
+  if ("remindAt" in p) out.remind_at = p.remindAt ?? null;
+  if (p.done !== undefined) out.done = p.done;
+  return out;
+}
+
+type DbAlarm = { id: string; title: string; time: string; repeat: Alarm["repeat"] };
+function fromDbAlarm(r: DbAlarm): Alarm {
+  return { id: r.id, title: r.title, time: r.time, repeat: r.repeat };
+}
+
+// fire-and-forget; logs but never throws into UI
+function bg<T>(p: PromiseLike<T>) {
+  Promise.resolve(p).then(
+    () => {},
+    (e) => console.warn("[finishit cloud sync]", e),
+  );
+}
+
+export function StoreProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<State>({ tasks: [], alarms: [], notes: [], hydrated: false });
+  const userIdRef = useRef<string | null>(null);
+
+  // Hydrate: localStorage first (instant), then Supabase if signed in (authoritative)
   useEffect(() => {
-    const parsed = loadPersisted();
+    const cached = loadPersisted();
     setState({
-      tasks: parsed?.tasks ?? [],
-      alarms: parsed?.alarms ?? [],
-      notes: parsed?.notes ?? [],
+      tasks: cached?.tasks ?? [],
+      alarms: cached?.alarms ?? [],
+      notes: cached?.notes ?? [],
       hydrated: true,
     });
+
+    let cancelled = false;
+    async function loadFromCloud() {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData?.user;
+      userIdRef.current = user?.id ?? null;
+      if (!user || cancelled) return;
+      const [tasksRes, notesRes, alarmsRes] = await Promise.all([
+        supabase.from("tasks").select("*").order("created_at", { ascending: true }),
+        supabase.from("notes").select("*").order("created_at", { ascending: false }),
+        supabase.from("alarms").select("*").order("created_at", { ascending: true }),
+      ]);
+      if (cancelled) return;
+      setState({
+        tasks: (tasksRes.data ?? []).map((r) => fromDbTask(r as DbTask)),
+        notes: (notesRes.data ?? []).map((r) => fromDbNote(r as DbNote)),
+        alarms: (alarmsRes.data ?? []).map((r) => fromDbAlarm(r as DbAlarm)),
+        hydrated: true,
+      });
+    }
+    loadFromCloud().catch((e) => console.warn("[finishit cloud hydrate]", e));
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      userIdRef.current = session?.user?.id ?? null;
+      if (event === "SIGNED_IN") loadFromCloud().catch(() => {});
+      if (event === "SIGNED_OUT") {
+        setState({ tasks: [], alarms: [], notes: [], hydrated: true });
+      }
+    });
+    return () => { cancelled = true; sub.subscription.unsubscribe(); };
   }, []);
 
-  // Persist after hydration (primary + rolling backup)
+  // Persist local cache (primary + rolling backup)
   useEffect(() => {
     if (!state.hydrated) return;
     try {
       const payload = JSON.stringify({ tasks: state.tasks, alarms: state.alarms, notes: state.notes });
-      // Move current primary to backup before overwriting, so a write failure mid-update
-      // still leaves a recoverable copy behind.
       const prev = localStorage.getItem(STORAGE_KEY);
       if (prev) localStorage.setItem(BACKUP_KEY, prev);
       localStorage.setItem(STORAGE_KEY, payload);
     } catch {}
   }, [state]);
 
-
-
-  // Tick timers
+  // Timer tick — local only, debounced sync of spent_seconds every 30s
+  const lastSyncRef = useRef<number>(Date.now());
   useEffect(() => {
     const id = setInterval(() => {
       setState((s) => {
@@ -171,76 +236,146 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           if (!t.isRunning) return t;
           changed = true;
           const remaining = Math.max(0, t.remainingSeconds - 1);
-          if (remaining === 0) return { ...t, remainingSeconds: 0, spentSeconds: t.spentSeconds + 1, isRunning: false };
+          if (remaining === 0) {
+            const updated = { ...t, remainingSeconds: 0, spentSeconds: t.spentSeconds + 1, isRunning: false };
+            if (userIdRef.current) {
+              bg(supabase.from("tasks").update({
+                remaining_seconds: 0, spent_seconds: updated.spentSeconds, is_running: false,
+              }).eq("id", t.id));
+            }
+            return updated;
+          }
           return { ...t, remainingSeconds: remaining, spentSeconds: t.spentSeconds + 1 };
         });
         return changed ? { ...s, tasks } : s;
       });
+
+      // Periodic sync of running timers (every 30s) to avoid hammering the DB
+      if (userIdRef.current && Date.now() - lastSyncRef.current > 30_000) {
+        lastSyncRef.current = Date.now();
+        setState((s) => {
+          s.tasks.filter((t) => t.isRunning).forEach((t) => {
+            bg(supabase.from("tasks").update({
+              remaining_seconds: t.remainingSeconds, spent_seconds: t.spentSeconds,
+            }).eq("id", t.id));
+          });
+          return s;
+        });
+      }
     }, 1000);
     return () => clearInterval(id);
   }, []);
 
+  const updateLocalTask = (id: string, patch: Partial<Task>) =>
+    setState((s) => ({ ...s, tasks: s.tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)) }));
+  const pushTask = (id: string, patch: Partial<Task>) => {
+    if (!userIdRef.current) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    bg(supabase.from("tasks").update(toDbTaskPatch(patch) as any).eq("id", id));
+  };
+
+
   const api = useMemo<StoreApi>(() => ({
     ...state,
-    addTask: (t) => setState((s) => ({
-      ...s,
-      tasks: [
-        ...s.tasks,
-        {
-          id: crypto.randomUUID(),
-          createdAt: new Date().toISOString(),
-          dayKey: t.dayKey ?? todayKey(),
-          remainingSeconds: t.estimatedMinutes * 60,
-          spentSeconds: 0,
-          isRunning: false,
-          ...t,
-        } as Task,
-      ],
-    })),
-    updateTask: (id, patch) => setState((s) => ({ ...s, tasks: s.tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)) })),
-    startTask: (id) => setState((s) => ({
-      ...s,
-      tasks: s.tasks.map((t) => (t.id === id ? { ...t, isRunning: true, status: "ongoing" as TaskStatus } : t)),
-    })),
-    pauseTask: (id) => setState((s) => ({ ...s, tasks: s.tasks.map((t) => (t.id === id ? { ...t, isRunning: false } : t)) })),
-    finishTask: (id) => setState((s) => ({
-      ...s,
-      tasks: s.tasks.map((t) => (t.id === id ? { ...t, isRunning: false, status: "finished" as TaskStatus } : t)),
-    })),
-    reopenTask: (id) => setState((s) => ({
-      ...s,
-      tasks: s.tasks.map((t) => (t.id === id ? { ...t, isRunning: false, status: "ongoing" as TaskStatus } : t)),
-    })),
-    moveToTomorrow: (id) => setState((s) => ({
-      ...s,
-      tasks: s.tasks.map((t) => (t.id === id ? { ...t, isRunning: false, dayKey: tomorrowKey(), status: "not-started" as TaskStatus } : t)),
-    })),
-    removeTask: (id) => setState((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== id) })),
-    archiveTask: (id) => setState((s) => ({
-      ...s,
-      tasks: s.tasks.map((t) => (t.id === id ? {
-        ...t,
+    addTask: (t) => {
+      const id = crypto.randomUUID();
+      const dayKey = t.dayKey ?? todayKey();
+      const newTask: Task = {
+        id,
+        createdAt: new Date().toISOString(),
+        dayKey,
+        remainingSeconds: t.estimatedMinutes * 60,
+        spentSeconds: 0,
         isRunning: false,
-        status: "finished" as TaskStatus,
-        archivedAt: new Date().toISOString(),
-        finalSpentSeconds: t.spentSeconds,
-      } : t)),
-    })),
-    unarchiveTask: (id) => setState((s) => ({
-      ...s,
-      tasks: s.tasks.map((t) => (t.id === id ? { ...t, archivedAt: undefined, dayKey: todayKey() } : t)),
-    })),
+        title: t.title, description: t.description, assignee: t.assignee,
+        assigneeAvatar: t.assigneeAvatar, estimatedMinutes: t.estimatedMinutes,
+        reminderBeforeMinutes: t.reminderBeforeMinutes, priority: t.priority,
+        status: t.status,
+      };
+      setState((s) => ({ ...s, tasks: [...s.tasks, newTask] }));
+      if (userIdRef.current) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        bg(supabase.from("tasks").insert({
+          id, user_id: userIdRef.current, ...toDbTaskPatch(newTask),
+        } as any));
+      }
 
-    addAlarm: (a) => setState((s) => ({ ...s, alarms: [...s.alarms, { id: crypto.randomUUID(), ...a }] })),
-    removeAlarm: (id) => setState((s) => ({ ...s, alarms: s.alarms.filter((a) => a.id !== id) })),
-    addNote: (n) => setState((s) => ({
-      ...s,
-      notes: [...s.notes, { id: crypto.randomUUID(), createdAt: new Date().toISOString(), done: false, ...n }],
-    })),
-    updateNote: (id, patch) => setState((s) => ({ ...s, notes: s.notes.map((n) => (n.id === id ? { ...n, ...patch } : n)) })),
-    removeNote: (id) => setState((s) => ({ ...s, notes: s.notes.filter((n) => n.id !== id) })),
+    },
+    updateTask: (id, patch) => { updateLocalTask(id, patch); pushTask(id, patch); },
+    startTask: (id) => {
+      updateLocalTask(id, { isRunning: true, status: "ongoing" });
+      pushTask(id, { isRunning: true, status: "ongoing" });
+    },
+    pauseTask: (id) => {
+      const t = state.tasks.find((x) => x.id === id);
+      updateLocalTask(id, { isRunning: false });
+      pushTask(id, { isRunning: false, remainingSeconds: t?.remainingSeconds, spentSeconds: t?.spentSeconds });
+    },
+    finishTask: (id) => {
+      const t = state.tasks.find((x) => x.id === id);
+      updateLocalTask(id, { isRunning: false, status: "finished" });
+      pushTask(id, { isRunning: false, status: "finished", remainingSeconds: t?.remainingSeconds, spentSeconds: t?.spentSeconds });
+    },
+    reopenTask: (id) => {
+      updateLocalTask(id, { isRunning: false, status: "ongoing" });
+      pushTask(id, { isRunning: false, status: "ongoing" });
+    },
+    moveToTomorrow: (id) => {
+      const dk = tomorrowKey();
+      updateLocalTask(id, { isRunning: false, dayKey: dk, status: "not-started" });
+      pushTask(id, { isRunning: false, dayKey: dk, status: "not-started" });
+    },
+    removeTask: (id) => {
+      setState((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== id) }));
+      if (userIdRef.current) bg(supabase.from("tasks").delete().eq("id", id));
+    },
+    archiveTask: (id) => {
+      const t = state.tasks.find((x) => x.id === id);
+      const archivedAt = new Date().toISOString();
+      const finalSpent = t?.spentSeconds ?? 0;
+      updateLocalTask(id, { isRunning: false, status: "finished", archivedAt, finalSpentSeconds: finalSpent });
+      pushTask(id, { isRunning: false, status: "finished", archivedAt, finalSpentSeconds: finalSpent, spentSeconds: t?.spentSeconds });
+    },
+    unarchiveTask: (id) => {
+      const dk = todayKey();
+      updateLocalTask(id, { archivedAt: undefined, dayKey: dk });
+      pushTask(id, { archivedAt: undefined, dayKey: dk });
+    },
+
+    addAlarm: (a) => {
+      const id = crypto.randomUUID();
+      setState((s) => ({ ...s, alarms: [...s.alarms, { id, ...a }] }));
+      if (userIdRef.current) {
+        bg(supabase.from("alarms").insert({ id, user_id: userIdRef.current, title: a.title, time: a.time, repeat: a.repeat }));
+      }
+    },
+    removeAlarm: (id) => {
+      setState((s) => ({ ...s, alarms: s.alarms.filter((a) => a.id !== id) }));
+      if (userIdRef.current) bg(supabase.from("alarms").delete().eq("id", id));
+    },
+
+    addNote: (n) => {
+      const id = crypto.randomUUID();
+      const note: Note = { id, createdAt: new Date().toISOString(), done: false, ...n };
+      setState((s) => ({ ...s, notes: [...s.notes, note] }));
+      if (userIdRef.current) {
+        bg(supabase.from("notes").insert({
+          id, user_id: userIdRef.current, title: note.title, content: note.content,
+          priority: note.priority, remind_at: note.remindAt ?? null, done: note.done,
+        }));
+      }
+    },
+    updateNote: (id, patch) => {
+      setState((s) => ({ ...s, notes: s.notes.map((n) => (n.id === id ? { ...n, ...patch } : n)) }));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (userIdRef.current) bg(supabase.from("notes").update(toDbNotePatch(patch) as any).eq("id", id));
+
+    },
+    removeNote: (id) => {
+      setState((s) => ({ ...s, notes: s.notes.filter((n) => n.id !== id) }));
+      if (userIdRef.current) bg(supabase.from("notes").delete().eq("id", id));
+    },
   }), [state]);
-
 
   return <StoreContext.Provider value={api}>{children}</StoreContext.Provider>;
 }
