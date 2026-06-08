@@ -58,6 +58,9 @@ interface StoreApi extends State {
   reopenTask: (id: string) => void;
   moveToTomorrow: (id: string) => void;
   removeTask: (id: string) => void;
+  archiveTask: (id: string) => void;
+  unarchiveTask: (id: string) => void;
+
   addAlarm: (a: Omit<Alarm, "id">) => void;
   removeAlarm: (id: string) => void;
   addNote: (n: Omit<Note, "id" | "createdAt" | "done">) => void;
