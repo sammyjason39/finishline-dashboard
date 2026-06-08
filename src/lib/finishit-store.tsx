@@ -270,8 +270,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, tasks: s.tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)) }));
   const pushTask = (id: string, patch: Partial<Task>) => {
     if (!userIdRef.current) return;
-    bg(supabase.from("tasks").update(toDbTaskPatch(patch)).eq("id", id));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    bg(supabase.from("tasks").update(toDbTaskPatch(patch) as any).eq("id", id));
   };
+
 
   const api = useMemo<StoreApi>(() => ({
     ...state,
