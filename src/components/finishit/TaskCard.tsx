@@ -1,4 +1,4 @@
-import { Bell, Clock, MoreHorizontal, Pause, Play, ArrowRightCircle, CalendarPlus, CheckCircle2, RotateCcw, Trash2 } from "lucide-react";
+import { Bell, Clock, MoreHorizontal, Pause, Play, ArrowRightCircle, CalendarPlus, CheckCircle2, RotateCcw, Trash2, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -23,7 +23,7 @@ const toDayKey = (d: Date) => {
 };
 
 export function TaskCard({ task }: { task: Task }) {
-  const { startTask, pauseTask, finishTask, reopenTask, moveToTomorrow, updateTask, removeTask } = useStore();
+  const { startTask, pauseTask, finishTask, reopenTask, moveToTomorrow, updateTask, removeTask, archiveTask } = useStore();
   const [laterOpen, setLaterOpen] = useState(false);
   const tomorrowStart = new Date();
   tomorrowStart.setDate(tomorrowStart.getDate() + 1);
@@ -143,10 +143,16 @@ export function TaskCard({ task }: { task: Task }) {
           </Button>
         )}
         {task.status === "finished" && (
-          <Button size="sm" variant="outline" onClick={() => reopenTask(task.id)}>
-            <RotateCcw /> Reopen
-          </Button>
+          <>
+            <Button size="sm" onClick={() => { archiveTask(task.id); toast.success(`Saved "${task.title}" to Insight`); }}>
+              <Archive /> Finish now
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => reopenTask(task.id)}>
+              <RotateCcw /> Reopen
+            </Button>
+          </>
         )}
+
         <Button size="sm" variant="ghost" onClick={() => moveToTomorrow(task.id)}>
           <ArrowRightCircle /> Tomorrow
         </Button>

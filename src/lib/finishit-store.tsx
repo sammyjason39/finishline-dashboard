@@ -18,7 +18,10 @@ export interface Task {
   isRunning: boolean;
   createdAt: string;
   dayKey: string;
+  archivedAt?: string; // ISO timestamp when sent to insight
+  finalSpentSeconds?: number; // snapshot at archive
 }
+
 
 export interface Alarm {
   id: string;
@@ -55,6 +58,9 @@ interface StoreApi extends State {
   reopenTask: (id: string) => void;
   moveToTomorrow: (id: string) => void;
   removeTask: (id: string) => void;
+  archiveTask: (id: string) => void;
+  unarchiveTask: (id: string) => void;
+
   addAlarm: (a: Omit<Alarm, "id">) => void;
   removeAlarm: (id: string) => void;
   addNote: (n: Omit<Note, "id" | "createdAt" | "done">) => void;
@@ -109,6 +115,21 @@ const sampleTasks = (): Task[] => {
 };
 
 const STORAGE_KEY = "finishit:v1";
+const BACKUP_KEY = "finishit:v1:backup";
+
+function loadPersisted(): Partial<State> | null {
+  for (const key of [STORAGE_KEY, BACKUP_KEY]) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw) as Partial<State>;
+      if (parsed && typeof parsed === "object") return parsed;
+    } catch {
+      // try next key
+    }
+  }
+  return null;
+}
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   // Start with empty state on both server and client to avoid hydration mismatch
@@ -116,29 +137,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Hydrate from localStorage after mount (client-only)
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Partial<State>;
-        setState({ tasks: parsed.tasks ?? [], alarms: parsed.alarms ?? [], notes: parsed.notes ?? [], hydrated: true });
-        return;
-      }
-    } catch {}
+    const parsed = loadPersisted();
     setState({
-      tasks: [],
-      alarms: [],
-      notes: [],
+      tasks: parsed?.tasks ?? [],
+      alarms: parsed?.alarms ?? [],
+      notes: parsed?.notes ?? [],
       hydrated: true,
     });
   }, []);
 
-  // Persist after hydration
+  // Persist after hydration (primary + rolling backup)
   useEffect(() => {
     if (!state.hydrated) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks: state.tasks, alarms: state.alarms, notes: state.notes }));
+      const payload = JSON.stringify({ tasks: state.tasks, alarms: state.alarms, notes: state.notes });
+      // Move current primary to backup before overwriting, so a write failure mid-update
+      // still leaves a recoverable copy behind.
+      const prev = localStorage.getItem(STORAGE_KEY);
+      if (prev) localStorage.setItem(BACKUP_KEY, prev);
+      localStorage.setItem(STORAGE_KEY, payload);
     } catch {}
   }, [state]);
+
 
 
   // Tick timers
@@ -196,6 +216,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       tasks: s.tasks.map((t) => (t.id === id ? { ...t, isRunning: false, dayKey: tomorrowKey(), status: "not-started" as TaskStatus } : t)),
     })),
     removeTask: (id) => setState((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== id) })),
+    archiveTask: (id) => setState((s) => ({
+      ...s,
+      tasks: s.tasks.map((t) => (t.id === id ? {
+        ...t,
+        isRunning: false,
+        status: "finished" as TaskStatus,
+        archivedAt: new Date().toISOString(),
+        finalSpentSeconds: t.spentSeconds,
+      } : t)),
+    })),
+    unarchiveTask: (id) => setState((s) => ({
+      ...s,
+      tasks: s.tasks.map((t) => (t.id === id ? { ...t, archivedAt: undefined, dayKey: todayKey() } : t)),
+    })),
+
     addAlarm: (a) => setState((s) => ({ ...s, alarms: [...s.alarms, { id: crypto.randomUUID(), ...a }] })),
     removeAlarm: (id) => setState((s) => ({ ...s, alarms: s.alarms.filter((a) => a.id !== id) })),
     addNote: (n) => setState((s) => ({
