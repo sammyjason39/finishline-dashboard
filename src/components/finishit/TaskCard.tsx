@@ -23,7 +23,7 @@ const toDayKey = (d: Date) => {
 };
 
 export function TaskCard({ task }: { task: Task }) {
-  const { startTask, pauseTask, finishTask, reopenTask, moveToTomorrow, updateTask, removeTask } = useStore();
+  const { startTask, pauseTask, finishTask, reopenTask, moveToTomorrow, updateTask, removeTask, archiveTask } = useStore();
   const [laterOpen, setLaterOpen] = useState(false);
   const tomorrowStart = new Date();
   tomorrowStart.setDate(tomorrowStart.getDate() + 1);
