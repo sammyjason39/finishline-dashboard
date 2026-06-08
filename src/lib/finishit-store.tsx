@@ -294,10 +294,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       };
       setState((s) => ({ ...s, tasks: [...s.tasks, newTask] }));
       if (userIdRef.current) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         bg(supabase.from("tasks").insert({
           id, user_id: userIdRef.current, ...toDbTaskPatch(newTask),
-        }));
+        } as any));
       }
+
     },
     updateTask: (id, patch) => { updateLocalTask(id, patch); pushTask(id, patch); },
     startTask: (id) => {
