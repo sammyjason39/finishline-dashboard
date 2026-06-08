@@ -31,7 +31,7 @@ function Dashboard() {
   const { tasks } = useStore();
   const [open, setOpen] = useState(false);
   const today = dateKeys.today();
-  const todays = useMemo(() => tasks.filter((t) => t.dayKey === today), [tasks, today]);
+  const todays = useMemo(() => tasks.filter((t) => t.dayKey === today && !t.archivedAt), [tasks, today]);
 
   return (
     <AppShell>
