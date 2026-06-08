@@ -27,9 +27,22 @@ export interface Alarm {
   repeat: "none" | "daily" | "weekdays";
 }
 
+export type NotePriority = "low" | "medium" | "high" | "urgent";
+
+export interface Note {
+  id: string;
+  title: string;
+  content: string;
+  priority: NotePriority;
+  remindAt?: string; // ISO date string (YYYY-MM-DD) or full ISO
+  createdAt: string;
+  done: boolean;
+}
+
 interface State {
   tasks: Task[];
   alarms: Alarm[];
+  notes: Note[];
   hydrated: boolean;
 }
 
@@ -44,7 +57,11 @@ interface StoreApi extends State {
   removeTask: (id: string) => void;
   addAlarm: (a: Omit<Alarm, "id">) => void;
   removeAlarm: (id: string) => void;
+  addNote: (n: Omit<Note, "id" | "createdAt" | "done">) => void;
+  updateNote: (id: string, patch: Partial<Note>) => void;
+  removeNote: (id: string) => void;
 }
+
 
 const StoreContext = createContext<StoreApi | null>(null);
 
@@ -95,7 +112,7 @@ const STORAGE_KEY = "finishit:v1";
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   // Start with empty state on both server and client to avoid hydration mismatch
-  const [state, setState] = useState<State>({ tasks: [], alarms: [], hydrated: false });
+  const [state, setState] = useState<State>({ tasks: [], alarms: [], notes: [], hydrated: false });
 
   // Hydrate from localStorage after mount (client-only)
   useEffect(() => {
@@ -103,13 +120,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<State>;
-        setState({ tasks: parsed.tasks ?? [], alarms: parsed.alarms ?? [], hydrated: true });
+        setState({ tasks: parsed.tasks ?? [], alarms: parsed.alarms ?? [], notes: parsed.notes ?? [], hydrated: true });
         return;
       }
     } catch {}
     setState({
       tasks: [],
       alarms: [],
+      notes: [],
       hydrated: true,
     });
   }, []);
@@ -118,9 +136,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!state.hydrated) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks: state.tasks, alarms: state.alarms }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks: state.tasks, alarms: state.alarms, notes: state.notes }));
     } catch {}
   }, [state]);
+
 
   // Tick timers
   useEffect(() => {
@@ -179,7 +198,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     removeTask: (id) => setState((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== id) })),
     addAlarm: (a) => setState((s) => ({ ...s, alarms: [...s.alarms, { id: crypto.randomUUID(), ...a }] })),
     removeAlarm: (id) => setState((s) => ({ ...s, alarms: s.alarms.filter((a) => a.id !== id) })),
+    addNote: (n) => setState((s) => ({
+      ...s,
+      notes: [...s.notes, { id: crypto.randomUUID(), createdAt: new Date().toISOString(), done: false, ...n }],
+    })),
+    updateNote: (id, patch) => setState((s) => ({ ...s, notes: s.notes.map((n) => (n.id === id ? { ...n, ...patch } : n)) })),
+    removeNote: (id) => setState((s) => ({ ...s, notes: s.notes.filter((n) => n.id !== id) })),
   }), [state]);
+
 
   return <StoreContext.Provider value={api}>{children}</StoreContext.Provider>;
 }
