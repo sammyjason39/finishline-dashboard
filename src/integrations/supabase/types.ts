@@ -16,24 +16,30 @@ export type Database = {
     Tables: {
       alarms: {
         Row: {
+          assignee_user_id: string | null
           created_at: string
           id: string
+          owner_id: string
           repeat: string
           time: string
           title: string
           user_id: string
         }
         Insert: {
+          assignee_user_id?: string | null
           created_at?: string
           id?: string
+          owner_id: string
           repeat?: string
           time: string
           title: string
           user_id: string
         }
         Update: {
+          assignee_user_id?: string | null
           created_at?: string
           id?: string
+          owner_id?: string
           repeat?: string
           time?: string
           title?: string
@@ -41,12 +47,65 @@ export type Database = {
         }
         Relationships: []
       }
+      connection_invites: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          inviter_id: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          inviter_id: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          inviter_id?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
+      connections: {
+        Row: {
+          created_at: string
+          id: string
+          user_a: string
+          user_b: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_a: string
+          user_b: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_a?: string
+          user_b?: string
+        }
+        Relationships: []
+      }
       notes: {
         Row: {
+          assignee_user_id: string | null
           content: string
           created_at: string
           done: boolean
           id: string
+          owner_id: string
           priority: string
           remind_at: string | null
           title: string
@@ -54,10 +113,12 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          assignee_user_id?: string | null
           content?: string
           created_at?: string
           done?: boolean
           id?: string
+          owner_id: string
           priority?: string
           remind_at?: string | null
           title: string
@@ -65,15 +126,44 @@ export type Database = {
           user_id: string
         }
         Update: {
+          assignee_user_id?: string | null
           content?: string
           created_at?: string
           done?: boolean
           id?: string
+          owner_id?: string
           priority?: string
           remind_at?: string | null
           title?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -82,6 +172,7 @@ export type Database = {
           archived_at: string | null
           assignee: string
           assignee_avatar: string | null
+          assignee_user_id: string | null
           created_at: string
           day_key: string
           description: string
@@ -89,9 +180,11 @@ export type Database = {
           final_spent_seconds: number | null
           id: string
           is_running: boolean
+          owner_id: string
           priority: string
           remaining_seconds: number
           reminder_before_minutes: number
+          seen_at: string | null
           spent_seconds: number
           status: string
           title: string
@@ -102,6 +195,7 @@ export type Database = {
           archived_at?: string | null
           assignee?: string
           assignee_avatar?: string | null
+          assignee_user_id?: string | null
           created_at?: string
           day_key: string
           description?: string
@@ -109,9 +203,11 @@ export type Database = {
           final_spent_seconds?: number | null
           id?: string
           is_running?: boolean
+          owner_id: string
           priority?: string
           remaining_seconds?: number
           reminder_before_minutes?: number
+          seen_at?: string | null
           spent_seconds?: number
           status?: string
           title: string
@@ -122,6 +218,7 @@ export type Database = {
           archived_at?: string | null
           assignee?: string
           assignee_avatar?: string | null
+          assignee_user_id?: string | null
           created_at?: string
           day_key?: string
           description?: string
@@ -129,9 +226,11 @@ export type Database = {
           final_spent_seconds?: number | null
           id?: string
           is_running?: boolean
+          owner_id?: string
           priority?: string
           remaining_seconds?: number
           reminder_before_minutes?: number
+          seen_at?: string | null
           spent_seconds?: number
           status?: string
           title?: string
@@ -145,7 +244,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      are_connected: { Args: { a: string; b: string }; Returns: boolean }
+      redeem_invite: { Args: { _code: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
