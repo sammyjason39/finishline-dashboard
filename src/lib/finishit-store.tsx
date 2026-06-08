@@ -112,7 +112,7 @@ const STORAGE_KEY = "finishit:v1";
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   // Start with empty state on both server and client to avoid hydration mismatch
-  const [state, setState] = useState<State>({ tasks: [], alarms: [], hydrated: false });
+  const [state, setState] = useState<State>({ tasks: [], alarms: [], notes: [], hydrated: false });
 
   // Hydrate from localStorage after mount (client-only)
   useEffect(() => {
@@ -120,13 +120,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<State>;
-        setState({ tasks: parsed.tasks ?? [], alarms: parsed.alarms ?? [], hydrated: true });
+        setState({ tasks: parsed.tasks ?? [], alarms: parsed.alarms ?? [], notes: parsed.notes ?? [], hydrated: true });
         return;
       }
     } catch {}
     setState({
       tasks: [],
       alarms: [],
+      notes: [],
       hydrated: true,
     });
   }, []);
@@ -135,9 +136,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!state.hydrated) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks: state.tasks, alarms: state.alarms }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks: state.tasks, alarms: state.alarms, notes: state.notes }));
     } catch {}
   }, [state]);
+
 
   // Tick timers
   useEffect(() => {
