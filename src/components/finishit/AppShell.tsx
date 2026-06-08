@@ -112,7 +112,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="md:hidden border-t border-border px-2 py-1.5 flex gap-1 overflow-x-auto">
           <NavLink to="/dashboard" icon={<LayoutGrid className="h-4 w-4" />}>Dashboard</NavLink>
           <NavLink to="/upcoming" icon={<CalendarDays className="h-4 w-4" />}>Upcoming</NavLink>
-          <NavLink to="/history" icon={<History className="h-4 w-4" />}>Memory</NavLink>
+          
         </div>
       </header>
       <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8">{children}</main>
