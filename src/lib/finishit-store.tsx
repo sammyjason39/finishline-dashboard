@@ -198,7 +198,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     removeTask: (id) => setState((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== id) })),
     addAlarm: (a) => setState((s) => ({ ...s, alarms: [...s.alarms, { id: crypto.randomUUID(), ...a }] })),
     removeAlarm: (id) => setState((s) => ({ ...s, alarms: s.alarms.filter((a) => a.id !== id) })),
+    addNote: (n) => setState((s) => ({
+      ...s,
+      notes: [...s.notes, { id: crypto.randomUUID(), createdAt: new Date().toISOString(), done: false, ...n }],
+    })),
+    updateNote: (id, patch) => setState((s) => ({ ...s, notes: s.notes.map((n) => (n.id === id ? { ...n, ...patch } : n)) })),
+    removeNote: (id) => setState((s) => ({ ...s, notes: s.notes.filter((n) => n.id !== id) })),
   }), [state]);
+
 
   return <StoreContext.Provider value={api}>{children}</StoreContext.Provider>;
 }
