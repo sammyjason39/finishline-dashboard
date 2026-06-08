@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
-import { Calendar, ChevronDown, Moon, Sun, LayoutGrid, History, LogOut, User as UserIcon, CalendarDays, StickyNote, Sparkles } from "lucide-react";
+import { Calendar, ChevronDown, Moon, Sun, LayoutGrid, History, LogOut, User as UserIcon, CalendarDays, StickyNote, Sparkles, Users } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -69,6 +69,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <NavLink to="/upcoming" icon={<CalendarDays className="h-4 w-4" />}>Upcoming</NavLink>
             <NavLink to="/notes" icon={<StickyNote className="h-4 w-4" />}>Notes</NavLink>
             <NavLink to="/insight" icon={<Sparkles className="h-4 w-4" />}>Insight</NavLink>
+            <NavLink to="/team" icon={<Users className="h-4 w-4" />}>Team</NavLink>
 
 
           </div>
@@ -118,6 +119,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <NavLink to="/upcoming" icon={<CalendarDays className="h-4 w-4" />}>Upcoming</NavLink>
           <NavLink to="/notes" icon={<StickyNote className="h-4 w-4" />}>Notes</NavLink>
           <NavLink to="/insight" icon={<Sparkles className="h-4 w-4" />}>Insight</NavLink>
+          <NavLink to="/team" icon={<Users className="h-4 w-4" />}>Team</NavLink>
 
 
           

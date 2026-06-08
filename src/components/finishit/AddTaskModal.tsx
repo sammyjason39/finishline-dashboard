@@ -21,10 +21,10 @@ const toDayKey = (d: Date) => {
 };
 
 export function AddTaskModal({ open, onOpenChange, initialDate }: { open: boolean; onOpenChange: (o: boolean) => void; initialDate?: Date }) {
-  const { addTask } = useStore();
+  const { addTask, assignableUsers, currentUserId } = useStore();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [assignee, setAssignee] = useState("You");
+  const [assigneeUserId, setAssigneeUserId] = useState<string>(currentUserId ?? "self");
   const [estimatedMinutes, setEstimatedMinutes] = useState(30);
   const [reminderBeforeMinutes, setReminderBeforeMinutes] = useState(10);
   const [priority, setPriority] = useState<Priority>("medium");
@@ -36,7 +36,8 @@ export function AddTaskModal({ open, onOpenChange, initialDate }: { open: boolea
   }, [open, initialDate]);
 
   const reset = () => {
-    setTitle(""); setDescription(""); setAssignee("You");
+    setTitle(""); setDescription("");
+    setAssigneeUserId(currentUserId ?? "self");
     setEstimatedMinutes(30); setReminderBeforeMinutes(10);
     setPriority("medium"); setStatus("not-started");
     setScheduledFor(initialDate ?? new Date());
@@ -46,10 +47,12 @@ export function AddTaskModal({ open, onOpenChange, initialDate }: { open: boolea
     if (!title.trim()) { toast.error("Add a title"); return; }
     const dayKey = toDayKey(scheduledFor);
     const todayKey = toDayKey(new Date());
+    const picked = assignableUsers.find((u) => u.id === assigneeUserId);
     addTask({
       title: title.trim(),
       description: description.trim(),
-      assignee,
+      assignee: picked?.label ?? "You",
+      assigneeUserId: assigneeUserId && assigneeUserId !== "self" ? assigneeUserId : undefined,
       estimatedMinutes,
       reminderBeforeMinutes,
       priority,
@@ -86,7 +89,18 @@ export function AddTaskModal({ open, onOpenChange, initialDate }: { open: boolea
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
               <Label htmlFor="assignee">Assigned to</Label>
-              <Input id="assignee" value={assignee} onChange={(e) => setAssignee(e.target.value)} />
+              <Select value={assigneeUserId} onValueChange={setAssigneeUserId}>
+                <SelectTrigger id="assignee"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {assignableUsers.length === 0 ? (
+                    <SelectItem value="self">You</SelectItem>
+                  ) : (
+                    assignableUsers.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>{u.label}</SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="prio">Priority</Label>
