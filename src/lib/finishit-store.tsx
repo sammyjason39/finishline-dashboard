@@ -27,9 +27,22 @@ export interface Alarm {
   repeat: "none" | "daily" | "weekdays";
 }
 
+export type NotePriority = "low" | "medium" | "high" | "urgent";
+
+export interface Note {
+  id: string;
+  title: string;
+  content: string;
+  priority: NotePriority;
+  remindAt?: string; // ISO date string (YYYY-MM-DD) or full ISO
+  createdAt: string;
+  done: boolean;
+}
+
 interface State {
   tasks: Task[];
   alarms: Alarm[];
+  notes: Note[];
   hydrated: boolean;
 }
 
@@ -44,7 +57,11 @@ interface StoreApi extends State {
   removeTask: (id: string) => void;
   addAlarm: (a: Omit<Alarm, "id">) => void;
   removeAlarm: (id: string) => void;
+  addNote: (n: Omit<Note, "id" | "createdAt" | "done">) => void;
+  updateNote: (id: string, patch: Partial<Note>) => void;
+  removeNote: (id: string) => void;
 }
+
 
 const StoreContext = createContext<StoreApi | null>(null);
 
