@@ -117,6 +117,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           <NavLink to="/dashboard" icon={<LayoutGrid className="h-4 w-4" />}>Dashboard</NavLink>
           <NavLink to="/upcoming" icon={<CalendarDays className="h-4 w-4" />}>Upcoming</NavLink>
           <NavLink to="/notes" icon={<StickyNote className="h-4 w-4" />}>Notes</NavLink>
+          <NavLink to="/insight" icon={<Sparkles className="h-4 w-4" />}>Insight</NavLink>
+
 
           
         </div>
