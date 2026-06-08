@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
-import { Calendar, ChevronDown, Moon, Sun, LayoutGrid, History, LogOut, User as UserIcon, CalendarDays, StickyNote } from "lucide-react";
+import { Calendar, ChevronDown, Moon, Sun, LayoutGrid, History, LogOut, User as UserIcon, CalendarDays, StickyNote, Sparkles } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
