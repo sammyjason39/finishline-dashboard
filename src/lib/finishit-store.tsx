@@ -18,7 +18,10 @@ export interface Task {
   isRunning: boolean;
   createdAt: string;
   dayKey: string;
+  archivedAt?: string; // ISO timestamp when sent to insight
+  finalSpentSeconds?: number; // snapshot at archive
 }
+
 
 export interface Alarm {
   id: string;
