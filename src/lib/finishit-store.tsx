@@ -367,7 +367,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     updateNote: (id, patch) => {
       setState((s) => ({ ...s, notes: s.notes.map((n) => (n.id === id ? { ...n, ...patch } : n)) }));
-      if (userIdRef.current) bg(supabase.from("notes").update(toDbNotePatch(patch)).eq("id", id));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (userIdRef.current) bg(supabase.from("notes").update(toDbNotePatch(patch) as any).eq("id", id));
+
     },
     removeNote: (id) => {
       setState((s) => ({ ...s, notes: s.notes.filter((n) => n.id !== id) }));
