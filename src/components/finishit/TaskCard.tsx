@@ -143,10 +143,16 @@ export function TaskCard({ task }: { task: Task }) {
           </Button>
         )}
         {task.status === "finished" && (
-          <Button size="sm" variant="outline" onClick={() => reopenTask(task.id)}>
-            <RotateCcw /> Reopen
-          </Button>
+          <>
+            <Button size="sm" onClick={() => { archiveTask(task.id); toast.success(`Saved "${task.title}" to Insight`); }}>
+              <Archive /> Finish now
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => reopenTask(task.id)}>
+              <RotateCcw /> Reopen
+            </Button>
+          </>
         )}
+
         <Button size="sm" variant="ghost" onClick={() => moveToTomorrow(task.id)}>
           <ArrowRightCircle /> Tomorrow
         </Button>
