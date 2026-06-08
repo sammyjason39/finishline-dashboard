@@ -49,6 +49,21 @@ export function TaskCard({ task }: { task: Task }) {
     }
   }, [task.isRunning, task.remainingSeconds, task.reminderBeforeMinutes, task.title]);
 
+  // Auto-mark seen when assignee opens it
+  useEffect(() => {
+    if (task.assigneeUserId === currentUserId && task.ownerId !== currentUserId && !task.seenAt) {
+      markTaskSeen(task.id);
+    }
+  }, [task.id, task.assigneeUserId, task.ownerId, task.seenAt, currentUserId, markTaskSeen]);
+
+  const isAssignedToMe = task.assigneeUserId && task.assigneeUserId === currentUserId && task.ownerId !== currentUserId;
+  const isAssignedByMe = task.ownerId === currentUserId && task.assigneeUserId && task.assigneeUserId !== currentUserId;
+  const collabBadge = isAssignedToMe
+    ? { text: `From ${labelForUser(task.ownerId)}`, cls: "bg-amber-500/10 text-amber-700 dark:text-amber-300" }
+    : isAssignedByMe
+    ? { text: `→ ${labelForUser(task.assigneeUserId)}`, cls: "bg-primary/10 text-primary" }
+    : null;
+
   const initial = task.assignee.trim()[0]?.toUpperCase() ?? "?";
   const pct = Math.min(100, Math.round((task.spentSeconds / Math.max(1, task.estimatedMinutes * 60)) * 100));
   const priorityColor =
