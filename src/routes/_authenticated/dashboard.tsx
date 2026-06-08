@@ -28,10 +28,15 @@ const columns: { key: TaskStatus; label: string; hint: string }[] = [
 ];
 
 function Dashboard() {
-  const { tasks } = useStore();
+  const { tasks, currentUserId } = useStore();
   const [open, setOpen] = useState(false);
   const today = dateKeys.today();
-  const todays = useMemo(() => tasks.filter((t) => t.dayKey === today && !t.archivedAt), [tasks, today]);
+  const todays = useMemo(
+    () => tasks.filter((t) => t.dayKey === today && !t.archivedAt && (
+      t.ownerId === currentUserId || t.assigneeUserId === currentUserId || (!t.assigneeUserId && t.ownerId === currentUserId)
+    )),
+    [tasks, today, currentUserId],
+  );
 
   return (
     <AppShell>
