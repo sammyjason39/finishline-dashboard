@@ -115,6 +115,21 @@ const sampleTasks = (): Task[] => {
 };
 
 const STORAGE_KEY = "finishit:v1";
+const BACKUP_KEY = "finishit:v1:backup";
+
+function loadPersisted(): Partial<State> | null {
+  for (const key of [STORAGE_KEY, BACKUP_KEY]) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw) as Partial<State>;
+      if (parsed && typeof parsed === "object") return parsed;
+    } catch {
+      // try next key
+    }
+  }
+  return null;
+}
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   // Start with empty state on both server and client to avoid hydration mismatch
@@ -122,29 +137,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Hydrate from localStorage after mount (client-only)
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Partial<State>;
-        setState({ tasks: parsed.tasks ?? [], alarms: parsed.alarms ?? [], notes: parsed.notes ?? [], hydrated: true });
-        return;
-      }
-    } catch {}
+    const parsed = loadPersisted();
     setState({
-      tasks: [],
-      alarms: [],
-      notes: [],
+      tasks: parsed?.tasks ?? [],
+      alarms: parsed?.alarms ?? [],
+      notes: parsed?.notes ?? [],
       hydrated: true,
     });
   }, []);
 
-  // Persist after hydration
+  // Persist after hydration (primary + rolling backup)
   useEffect(() => {
     if (!state.hydrated) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks: state.tasks, alarms: state.alarms, notes: state.notes }));
+      const payload = JSON.stringify({ tasks: state.tasks, alarms: state.alarms, notes: state.notes });
+      // Move current primary to backup before overwriting, so a write failure mid-update
+      // still leaves a recoverable copy behind.
+      const prev = localStorage.getItem(STORAGE_KEY);
+      if (prev) localStorage.setItem(BACKUP_KEY, prev);
+      localStorage.setItem(STORAGE_KEY, payload);
     } catch {}
   }, [state]);
+
 
 
   // Tick timers
