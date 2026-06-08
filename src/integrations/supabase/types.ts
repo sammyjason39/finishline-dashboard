@@ -14,7 +14,132 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      alarms: {
+        Row: {
+          created_at: string
+          id: string
+          repeat: string
+          time: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          repeat?: string
+          time: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          repeat?: string
+          time?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notes: {
+        Row: {
+          content: string
+          created_at: string
+          done: boolean
+          id: string
+          priority: string
+          remind_at: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          done?: boolean
+          id?: string
+          priority?: string
+          remind_at?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          done?: boolean
+          id?: string
+          priority?: string
+          remind_at?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          archived_at: string | null
+          assignee: string
+          assignee_avatar: string | null
+          created_at: string
+          day_key: string
+          description: string
+          estimated_minutes: number
+          final_spent_seconds: number | null
+          id: string
+          is_running: boolean
+          priority: string
+          remaining_seconds: number
+          reminder_before_minutes: number
+          spent_seconds: number
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          assignee?: string
+          assignee_avatar?: string | null
+          created_at?: string
+          day_key: string
+          description?: string
+          estimated_minutes?: number
+          final_spent_seconds?: number | null
+          id?: string
+          is_running?: boolean
+          priority?: string
+          remaining_seconds?: number
+          reminder_before_minutes?: number
+          spent_seconds?: number
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          assignee?: string
+          assignee_avatar?: string | null
+          created_at?: string
+          day_key?: string
+          description?: string
+          estimated_minutes?: number
+          final_spent_seconds?: number | null
+          id?: string
+          is_running?: boolean
+          priority?: string
+          remaining_seconds?: number
+          reminder_before_minutes?: number
+          spent_seconds?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
