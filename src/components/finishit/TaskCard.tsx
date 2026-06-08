@@ -1,4 +1,4 @@
-import { Bell, Clock, MoreHorizontal, Pause, Play, ArrowRightCircle, CalendarPlus, CheckCircle2, RotateCcw, Trash2 } from "lucide-react";
+import { Bell, Clock, MoreHorizontal, Pause, Play, ArrowRightCircle, CalendarPlus, CheckCircle2, RotateCcw, Trash2, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
