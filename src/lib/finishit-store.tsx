@@ -640,7 +640,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
       updateMyProfile: async (patch) => {
         if (!me) return;
-        const dbPatch: Record<string, unknown> = {};
+        const dbPatch: { display_name?: string | null } = {};
         if (patch.displayName !== undefined) dbPatch.display_name = patch.displayName;
         const { data, error } = await supabase.from("profiles").update(dbPatch).eq("id", me).select("*").single();
         if (error || !data) { toast.error(error?.message ?? "Failed to save"); return; }
