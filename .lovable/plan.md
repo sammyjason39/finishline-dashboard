@@ -1,22 +1,16 @@
-## Add Edit functionality to Tasks and Notes
+## Plan: Mobile-only Full Screen mode on task cards
 
-### Tasks (TaskCard)
-- In the existing 3-dot dropdown menu (visible on hover/focus on every card), add an **Edit** menu item above **Delete task**.
-- Hide the Edit item when `task.status === "finished"` (only Delete remains for finished cards), per request.
-- Clicking Edit opens an `EditTaskModal` prefilled with the task's current values. Save calls `updateTask(id, patch)` from the store; Cancel closes without changes.
+Add a "Full Screen" button to each task card (except finished) that's visible only on phones (`sm:hidden`). It opens a phone-sized overlay so the user can leave the phone propped up as a big reminder display.
 
-### EditTaskModal
-- New component `src/components/finishit/EditTaskModal.tsx`, adapted from `AddTaskModal`. Fields: title, description, assignee, priority, estimated minutes, reminder before minutes, status, scheduled date (`dayKey`).
-- Single dialog instance owned by `TaskCard` (kept simple; one modal per card mounts only when open).
-- On submit: build a `Partial<Task>` patch (only changed fields is fine, but sending the full set is safe too) and call `updateTask`. Toast "Task updated".
+### Changes in `src/components/finishit/TaskCard.tsx`
+1. Add `fullscreen` state and a "Full Screen" `Button` with the `Maximize2` icon, placed **before** the Pause/Start button. Hidden on `sm+` via `className="sm:hidden"`. Hidden when task is finished.
+2. Render a fixed overlay (`fixed inset-0 z-[100] bg-background sm:hidden`) when `fullscreen` is true, containing:
+   - Header: status badge + close (X) button
+   - Big task title + description
+   - Huge mono countdown (`text-7xl`) of `remainingSeconds`
+   - Live/Paused indicator + spent time
+   - Progress bar (same `pct` as card) with percentage label
+   - Bottom action row: Pause/Start (toggles based on `isRunning`) and Finish (also closes overlay)
+3. Request a screen Wake Lock while overlay is open (best-effort; release on close) so the phone screen stays on while showing the timer.
 
-### Notes (NoteRow on `/notes`)
-- Add an Edit (pencil) icon button next to the existing Check/Reopen and Delete buttons.
-- Edit toggles the row into an inline editor: Title input, Content textarea, Priority select, Remind date popover (same widgets as the create form). Save / Cancel buttons.
-- On Save call `updateNote(id, patch)` (already exposed by the store). Toast "Note updated".
-- Inline edit avoids a new modal and matches the lightweight feel of the notes page.
-
-### Out of scope
-- No backend/schema changes — `updateTask` and `updateNote` already persist via the store.
-- No changes to permissions; the existing RLS already allows owners and connected collaborators to update tasks.
-- No edit on finished task cards (only Delete remains there).
+No changes to desktop/tablet layout or to other cards/notes.
