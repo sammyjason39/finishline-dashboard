@@ -1,4 +1,5 @@
-import { Bell, Clock, MoreHorizontal, Pause, Play, ArrowRightCircle, CalendarPlus, CheckCircle2, RotateCcw, Trash2, Archive } from "lucide-react";
+import { Bell, Clock, MoreHorizontal, Pause, Play, ArrowRightCircle, CalendarPlus, CheckCircle2, RotateCcw, Trash2, Archive, Pencil } from "lucide-react";
+import { EditTaskModal } from "./EditTaskModal";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -25,6 +26,7 @@ const toDayKey = (d: Date) => {
 export function TaskCard({ task }: { task: Task }) {
   const { startTask, pauseTask, finishTask, reopenTask, moveToTomorrow, updateTask, removeTask, archiveTask, currentUserId, labelForUser, markTaskSeen } = useStore();
   const [laterOpen, setLaterOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const tomorrowStart = new Date();
   tomorrowStart.setDate(tomorrowStart.getDate() + 1);
   tomorrowStart.setHours(0, 0, 0, 0);
@@ -101,6 +103,11 @@ export function TaskCard({ task }: { task: Task }) {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
+            {task.status !== "finished" && (
+              <DropdownMenuItem onClick={() => setEditOpen(true)}>
+                <Pencil className="mr-2 h-4 w-4" /> Edit task
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem
               onClick={() => {
                 removeTask(task.id);
