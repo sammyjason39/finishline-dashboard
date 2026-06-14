@@ -206,6 +206,9 @@ export function TaskCard({ task }: { task: Task }) {
           </PopoverContent>
         </Popover>
       </div>
+      {editOpen && (
+        <EditTaskModal open={editOpen} onOpenChange={setEditOpen} task={task} />
+      )}
     </div>
   );
 }
