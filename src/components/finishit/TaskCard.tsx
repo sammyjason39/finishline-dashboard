@@ -1,5 +1,6 @@
 import { Bell, Clock, MoreHorizontal, Pause, Play, ArrowRightCircle, CalendarPlus, CheckCircle2, RotateCcw, Trash2, Archive, Pencil } from "lucide-react";
 import { EditTaskModal } from "./EditTaskModal";
+import { useProfile } from "@/lib/profile";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -66,6 +67,8 @@ export function TaskCard({ task }: { task: Task }) {
     ? { text: `→ ${labelForUser(task.assigneeUserId)}`, cls: "bg-primary/10 text-primary" }
     : null;
 
+  const profile = useProfile();
+  const isSelf = !task.assigneeUserId || task.assigneeUserId === currentUserId;
   const initial = task.assignee.trim()[0]?.toUpperCase() ?? "?";
   const pct = Math.min(100, Math.round((task.spentSeconds / Math.max(1, task.estimatedMinutes * 60)) * 100));
   const priorityColor =
@@ -122,9 +125,17 @@ export function TaskCard({ task }: { task: Task }) {
       </div>
 
       <div className="mt-3 flex items-center gap-3 text-xs">
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[color:var(--blue-soft)] text-[11px] font-semibold text-primary">
-          {initial}
-        </div>
+        {isSelf && profile.avatarUrl ? (
+          <img
+            src={profile.avatarUrl}
+            alt={task.assignee}
+            className="h-7 w-7 rounded-full object-cover"
+          />
+        ) : (
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[color:var(--blue-soft)] text-[11px] font-semibold text-primary">
+            {initial}
+          </div>
+        )}
         <span className="text-muted-foreground">{task.assignee}</span>
         <span className="font-mono text-muted-foreground">·</span>
         <span className="font-mono text-muted-foreground">{task.estimatedMinutes}m est</span>
