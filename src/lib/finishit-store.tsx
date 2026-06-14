@@ -272,11 +272,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return map;
     }
 
-    async function loadFromCloud() {
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData?.user;
-      userIdRef.current = user?.id ?? null;
-      if (!user || cancelled) return;
+    let loadedForUser: string | null = null;
+    async function loadFromCloud(userId: string) {
+      if (loadedForUser === userId) return;
+      loadedForUser = userId;
+      userIdRef.current = userId;
 
       const [tasksRes, notesRes, alarmsRes, connsRes, invitesRes] = await Promise.all([
         supabase.from("tasks").select("*").order("created_at", { ascending: true }),
@@ -293,7 +293,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const connections = (connsRes.data ?? []).map((r) => fromDbConnection(r as DbConnection));
       const invites = (invitesRes.data ?? []).map((r) => fromDbInvite(r as DbInvite));
 
-      const profileIds = new Set<string>([user.id]);
+      const profileIds = new Set<string>([userId]);
       connections.forEach((c) => { profileIds.add(c.userA); profileIds.add(c.userB); });
       tasks.forEach((t) => { if (t.ownerId) profileIds.add(t.ownerId); if (t.assigneeUserId) profileIds.add(t.assigneeUserId); });
       notes.forEach((n) => { if (n.ownerId) profileIds.add(n.ownerId); if (n.assigneeUserId) profileIds.add(n.assigneeUserId); });
@@ -303,19 +303,33 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (cancelled) return;
       setState({
         tasks, notes, alarms, connections, invites, profiles,
-        currentUserId: user.id, hydrated: true,
+        currentUserId: userId, hydrated: true,
       });
     }
-    loadFromCloud().catch((e) => console.warn("[finishit cloud hydrate]", e));
+
+    // Sync read from storage — avoids the network round-trip race where
+    // getUser() can briefly return null right after an OAuth redirect.
+    supabase.auth.getSession().then(({ data }) => {
+      const uid = data.session?.user?.id;
+      if (uid && !cancelled) loadFromCloud(uid).catch((e) => console.warn("[finishit cloud hydrate]", e));
+    });
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      userIdRef.current = session?.user?.id ?? null;
-      if (event === "SIGNED_IN") loadFromCloud().catch(() => {});
+      const uid = session?.user?.id ?? null;
+      userIdRef.current = uid;
       if (event === "SIGNED_OUT") {
+        loadedForUser = null;
         setState({
           tasks: [], alarms: [], notes: [], connections: [], invites: [], profiles: {},
           currentUserId: null, hydrated: true,
         });
+        return;
+      }
+      // INITIAL_SESSION fires once on mount with the restored session — this is
+      // what unblocks the post-OAuth blank screen. SIGNED_IN / TOKEN_REFRESHED
+      // are guarded by loadedForUser so we don't re-fetch on every refresh.
+      if (uid && (event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED")) {
+        loadFromCloud(uid).catch(() => {});
       }
     });
     return () => { cancelled = true; sub.subscription.unsubscribe(); };
