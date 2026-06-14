@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { useStore, type NotePriority, type Note } from "@/lib/finishit-store";
 import { useMemo, useState } from "react";
-import { CalendarIcon, Plus, Trash2, BellRing, Check, RotateCcw } from "lucide-react";
+import { CalendarIcon, Plus, Trash2, BellRing, Check, RotateCcw, Pencil, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -186,6 +186,100 @@ function NoteRow({
 }) {
   const meta = PRIORITY_META[note.priority];
   const overdue = note.remindAt && !note.done && note.remindAt < new Date().toISOString().slice(0, 10);
+  const [editing, setEditing] = useState(false);
+  const [eTitle, setETitle] = useState(note.title);
+  const [eContent, setEContent] = useState(note.content);
+  const [ePriority, setEPriority] = useState<NotePriority>(note.priority);
+  const [eRemind, setERemind] = useState<Date | undefined>(note.remindAt ? new Date(note.remindAt) : undefined);
+  const [eCalOpen, setECalOpen] = useState(false);
+
+  const startEdit = () => {
+    setETitle(note.title);
+    setEContent(note.content);
+    setEPriority(note.priority);
+    setERemind(note.remindAt ? new Date(note.remindAt) : undefined);
+    setEditing(true);
+  };
+
+  const saveEdit = () => {
+    if (!eTitle.trim()) { toast.error("Title is required"); return; }
+    onUpdate(note.id, {
+      title: eTitle.trim(),
+      content: eContent.trim(),
+      priority: ePriority,
+      remindAt: eRemind ? format(eRemind, "yyyy-MM-dd") : undefined,
+    });
+    setEditing(false);
+    toast.success("Note updated");
+  };
+
+  if (editing) {
+    return (
+      <div className="rounded-xl border border-primary/40 bg-card p-4 space-y-3">
+        <div className="space-y-1.5">
+          <Label htmlFor={`et-${note.id}`}>Title</Label>
+          <Input id={`et-${note.id}`} value={eTitle} onChange={(e) => setETitle(e.target.value)} maxLength={120} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor={`ec-${note.id}`}>Content</Label>
+          <Textarea id={`ec-${note.id}`} value={eContent} onChange={(e) => setEContent(e.target.value)} rows={4} maxLength={4000} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label>Priority</Label>
+            <Select value={ePriority} onValueChange={(v) => setEPriority(v as NotePriority)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="urgent">Urgent</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Remind date</Label>
+            <Popover open={eCalOpen} onOpenChange={setECalOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn("justify-start text-left font-normal", !eRemind && "text-muted-foreground")}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {eRemind ? format(eRemind, "PP") : "Optional"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={eRemind}
+                  onSelect={(d) => { setERemind(d); setECalOpen(false); }}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+                {eRemind && (
+                  <div className="border-t border-border p-2">
+                    <Button type="button" size="sm" variant="ghost" className="w-full" onClick={() => setERemind(undefined)}>
+                      Clear
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>
+            <X className="h-4 w-4" /> Cancel
+          </Button>
+          <Button size="sm" onClick={saveEdit}>
+            <Check className="h-4 w-4" /> Save
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("rounded-xl border border-border bg-card p-4", note.done && "opacity-60")}>
@@ -218,6 +312,11 @@ function NoteRow({
           ) : (
             <Button size="icon" variant="ghost" onClick={() => onUpdate(note.id, { done: true })} aria-label="Mark done">
               <Check className="h-4 w-4" />
+            </Button>
+          )}
+          {!note.done && (
+            <Button size="icon" variant="ghost" onClick={startEdit} aria-label="Edit">
+              <Pencil className="h-4 w-4" />
             </Button>
           )}
           <Button size="icon" variant="ghost" onClick={() => { onRemove(note.id); toast("Note deleted"); }} aria-label="Delete">

@@ -1,36 +1,22 @@
-## Apa yang terjadi
+## Add Edit functionality to Tasks and Notes
 
-Setelah login Google, browser di-redirect balik ke `/dashboard`. Pada redirect itu:
+### Tasks (TaskCard)
+- In the existing 3-dot dropdown menu (visible on hover/focus on every card), add an **Edit** menu item above **Delete task**.
+- Hide the Edit item when `task.status === "finished"` (only Delete remains for finished cards), per request.
+- Clicking Edit opens an `EditTaskModal` prefilled with the task's current values. Save calls `updateTask(id, patch)` from the store; Cancel closes without changes.
 
-1. `_authenticated/route.tsx` panggil `supabase.auth.getUser()` di `beforeLoad` → OK, user dikenali, masuk dashboard.
-2. Tapi di dalam app ada **dua** provider yang juga harus kenal user-nya: `StoreProvider` (tasks/notes/alarms) dan `ProfileProvider` (nama, avatar).
-3. Saat keduanya mount, mereka langsung panggil `supabase.auth.getUser()`. Pada mount pertama setelah OAuth redirect, session belum selesai di-rehydrate dari storage → `getUser()` balas `null`.
-4. Sesaat kemudian Supabase emit event `INITIAL_SESSION` (dengan user yang benar). Tapi listener kita hanya menangani `SIGNED_IN` / `SIGNED_OUT` / `USER_UPDATED` — `INITIAL_SESSION` di-skip.
-5. Akibatnya `currentUserId` tetap `null`, filter di Dashboard (`t.ownerId === currentUserId || ...`) buang semua task → tampak blank. Begitu user refresh, session sudah ada di storage, `getUser()` langsung balas user → semua jalan.
+### EditTaskModal
+- New component `src/components/finishit/EditTaskModal.tsx`, adapted from `AddTaskModal`. Fields: title, description, assignee, priority, estimated minutes, reminder before minutes, status, scheduled date (`dayKey`).
+- Single dialog instance owned by `TaskCard` (kept simple; one modal per card mounts only when open).
+- On submit: build a `Partial<Task>` patch (only changed fields is fine, but sending the full set is safe too) and call `updateTask`. Toast "Task updated".
 
-Ini juga kenapa nama / avatar kadang baru muncul setelah refresh.
+### Notes (NoteRow on `/notes`)
+- Add an Edit (pencil) icon button next to the existing Check/Reopen and Delete buttons.
+- Edit toggles the row into an inline editor: Title input, Content textarea, Priority select, Remind date popover (same widgets as the create form). Save / Cancel buttons.
+- On Save call `updateNote(id, patch)` (already exposed by the store). Toast "Note updated".
+- Inline edit avoids a new modal and matches the lightweight feel of the notes page.
 
-## Yang akan diubah
-
-Cukup di dua file, tidak menyentuh skema DB.
-
-### 1. `src/lib/finishit-store.tsx`
-- Hydrate via `supabase.auth.getSession()` (sinkron dari storage) sebagai sumber utama, bukan `getUser()` (yang network-bound dan bisa null sebentar).
-- Listener `onAuthStateChange`: tangani juga `INITIAL_SESSION` dan `TOKEN_REFRESHED` — jalankan `loadFromCloud` kalau ada user dan `currentUserId` masih null.
-- Guard: kalau `INITIAL_SESSION` datang dengan user yang sama, jangan re-fetch (hindari double load).
-
-### 2. `src/lib/profile.tsx`
-- Ganti pola "panggil `load()` di mount" dengan: subscribe dulu ke `onAuthStateChange`, lalu set state dari session-nya. Tangani `INITIAL_SESSION` agar profil ke-set di render pertama setelah OAuth.
-
-### 3. (Kecil) `src/routes/_authenticated/dashboard.tsx`
-- Tambah loading state ringan: kalau `hydrated === true` tapi `currentUserId === null` dan auth belum settle, tampilkan skeleton singkat alih-alih board kosong. Ini safety net visual sembari store hydrate.
-
-## Yang TIDAK diubah
-- Tidak menyentuh `_authenticated/route.tsx` (file managed Lovable).
-- Tidak mengubah flow OAuth atau redirect URL.
-- Tidak mengubah skema DB / RLS.
-
-## Cara verifikasi
-- Logout → login via Google → sampai di `/dashboard` task & nama langsung muncul tanpa refresh.
-- Hard refresh `/dashboard` tetap normal.
-- Sign out tetap clean (cache di-clear, redirect ke `/auth`).
+### Out of scope
+- No backend/schema changes — `updateTask` and `updateNote` already persist via the store.
+- No changes to permissions; the existing RLS already allows owners and connected collaborators to update tasks.
+- No edit on finished task cards (only Delete remains there).
