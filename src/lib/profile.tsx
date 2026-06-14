@@ -37,7 +37,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    setLoading(true);
     const { data } = await supabase.auth.getUser();
     const user = data.user;
     if (!user) {
@@ -59,9 +58,21 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    load();
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+    // Subscribe FIRST so we catch INITIAL_SESSION — that's the event fired
+    // right after an OAuth redirect, and ignoring it caused the post-login
+    // blank header (no name / avatar until manual refresh).
+    let loadedFor: string | null = null;
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        loadedFor = null;
+        setState({ userId: null, email: null, displayName: "", avatarPath: null, avatarUrl: null });
+        setLoading(false);
+        return;
+      }
+      const uid = session?.user?.id ?? null;
+      if (!uid) { setLoading(false); return; }
+      if (event === "USER_UPDATED" || loadedFor !== uid) {
+        loadedFor = uid;
         load();
       }
     });
