@@ -1,4 +1,4 @@
-import { Bell, Clock, MoreHorizontal, Pause, Play, ArrowRightCircle, CalendarPlus, CheckCircle2, RotateCcw, Trash2, Archive, Pencil } from "lucide-react";
+import { Bell, Clock, MoreHorizontal, Pause, Play, ArrowRightCircle, CalendarPlus, CheckCircle2, RotateCcw, Trash2, Archive, Pencil, Maximize2, X } from "lucide-react";
 import { EditTaskModal } from "./EditTaskModal";
 import { useProfile } from "@/lib/profile";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,15 @@ export function TaskCard({ task }: { task: Task }) {
   const { startTask, pauseTask, finishTask, reopenTask, moveToTomorrow, updateTask, removeTask, archiveTask, currentUserId, labelForUser, markTaskSeen } = useStore();
   const [laterOpen, setLaterOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  useEffect(() => {
+    if (!fullscreen) return;
+    let wakeLock: { release: () => Promise<void> } | null = null;
+    const nav = navigator as Navigator & { wakeLock?: { request: (t: string) => Promise<{ release: () => Promise<void> }> } };
+    nav.wakeLock?.request("screen").then((w) => { wakeLock = w; }).catch(() => {});
+    return () => { wakeLock?.release().catch(() => {}); };
+  }, [fullscreen]);
   const tomorrowStart = new Date();
   tomorrowStart.setDate(tomorrowStart.getDate() + 1);
   tomorrowStart.setHours(0, 0, 0, 0);
@@ -165,6 +174,11 @@ export function TaskCard({ task }: { task: Task }) {
 
       <div className="mt-4 flex flex-wrap gap-2">
         {task.status !== "finished" && (
+          <Button size="sm" variant="outline" className="sm:hidden" onClick={() => setFullscreen(true)}>
+            <Maximize2 /> Full Screen
+          </Button>
+        )}
+        {task.status !== "finished" && (
           task.isRunning ? (
             <Button size="sm" variant="secondary" onClick={() => pauseTask(task.id)}>
               <Pause /> Pause
@@ -219,6 +233,52 @@ export function TaskCard({ task }: { task: Task }) {
       </div>
       {editOpen && (
         <EditTaskModal open={editOpen} onOpenChange={setEditOpen} task={task} />
+      )}
+      {fullscreen && (
+        <div className="fixed inset-0 z-[100] flex flex-col bg-background sm:hidden">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <StatusBadge status={task.status} />
+            <button
+              onClick={() => setFullscreen(false)}
+              className="rounded-md p-2 text-muted-foreground hover:bg-muted"
+              aria-label="Close full screen"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+            <h2 className="text-2xl font-bold text-foreground">{task.title}</h2>
+            {task.description && (
+              <p className="mt-2 text-sm text-muted-foreground line-clamp-3">{task.description}</p>
+            )}
+            <div className="mt-10 font-mono text-7xl font-bold tabular-nums text-foreground">
+              {formatDuration(task.remainingSeconds)}
+            </div>
+            <div className="mt-3 flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+              {task.isRunning ? <span className="text-primary">● Live</span> : <span>Paused</span>}
+              <span>·</span>
+              <span>Spent {formatDuration(task.spentSeconds)}</span>
+            </div>
+            <div className="mt-8 h-2 w-full max-w-sm overflow-hidden rounded-full bg-muted">
+              <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+            </div>
+            <div className="mt-2 font-mono text-[11px] text-muted-foreground">{pct}% of {task.estimatedMinutes}m</div>
+          </div>
+          <div className="flex gap-3 px-6 pb-8 pt-2">
+            {task.isRunning ? (
+              <Button size="lg" variant="secondary" className="flex-1" onClick={() => pauseTask(task.id)}>
+                <Pause /> Pause
+              </Button>
+            ) : (
+              <Button size="lg" className="flex-1" onClick={() => startTask(task.id)}>
+                <Play /> Start
+              </Button>
+            )}
+            <Button size="lg" variant="outline" className="flex-1" onClick={() => { finishTask(task.id); setFullscreen(false); }}>
+              <CheckCircle2 /> Finish
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
